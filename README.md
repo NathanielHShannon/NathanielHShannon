@@ -7,7 +7,7 @@ I'm a researcher who measures what's hard to pin down: why people avoid clinical
 ### What I work on
 
 - **Predictive modeling.** Benchmarked four machine learning model types on national data from 25,000+ high school students to flag graduation risk early.
-- **Causal inference.** Causal forests on social determinants of health and late-life depression; causal mediation of parental involvement and STEM achievement.
+- **Causal inference.** Causal forests on social determinants of health and late-life mental health outcomes; causal mediation of parental involvement and STEM achievement.
 - **Measurement.** Survey design and validation, including a Health Belief Model measure for cancer clinical trial participation and tests of whether questionnaires work the same across race and income.
 - **Behavioral data at scale.** Three years at Nielsen analyzing purchase histories of 250,000+ Walgreens customers and running neuro studies of shopper choice.
 
@@ -20,7 +20,7 @@ I'm a researcher who measures what's hard to pin down: why people avoid clinical
 
 ### Off the clock
 
-I make water-marbled paintings.
+I make water-marbled paintings. Check out my favorites on my website!!
 
 ### Get in touch
 
