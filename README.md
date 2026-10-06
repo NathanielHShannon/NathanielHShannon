@@ -1,6 +1,6 @@
 ## Hi, I'm Nathaniel
 
-I'm a data scientist who measures what's hard to pin down: why people avoid clinical trials, which students may not graduate, and how social conditions shape depression in older adults. I build predictive and causal models on messy, real-world data, check them for bias first, and turn the results into clear recommendations.
+I'm a researcher who measures what's hard to pin down: why people avoid clinical trials, which students may not graduate, and how social conditions shape depression in older adults. I build predictive and causal models on messy, real-world data, check them for bias first, and turn the results into clear recommendations.
 
 **Currently:** Postdoctoral Fellow, Community Medicine & Population Health, University of Alabama · PhD, Educational Psychology · Based in Tuscaloosa, open to relocating
 
@@ -24,4 +24,4 @@ I make water-marbled paintings.
 
 ### Get in touch
 
-[LinkedIn](https://www.linkedin.com/in/nathanielhshannon) · [nathanielhshannon@gmail.com](mailto:nathanielhshannon@gmail.com)
+[nathanielhshannon.com](https://nathanielhshannon.com) · [LinkedIn](https://www.linkedin.com/in/nathanielhshannon) · [nathanielhshannon@gmail.com](mailto:nathanielhshannon@gmail.com)
