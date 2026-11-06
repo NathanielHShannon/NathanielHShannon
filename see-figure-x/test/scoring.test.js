@@ -61,7 +61,7 @@ test('distribution scoring ignores how tall the drawing is', () => {
   assert.strictEqual(S.scoreDrawing(p, half).score, 100);
   // A bimodal guess should lose points against the single-humped truth.
   const twoHumps = {
-    strokes: [S.sampleXs(p).map((x) => [x, Math.exp(-((x - 161) ** 2) / 20) + Math.exp(-((x - 176) ** 2) / 20)])],
+    strokes: [S.sampleXs(p).map((x) => [x, Math.exp(-((x - 63.5) ** 2) / 3) + Math.exp(-((x - 69) ** 2) / 3)])],
   };
   assert.ok(S.scoreDrawing(p, twoHumps).score < 90);
 });

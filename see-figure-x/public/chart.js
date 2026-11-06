@@ -31,6 +31,22 @@
     return out;
   }
 
+  // Axis ticks. An axis with format "feet" holds inches and ticks on whole
+  // 3, 6 or 12 inch steps so labels read like 5′6″.
+  function axisTicks(axis, target) {
+    if (axis.format !== 'feet') return ticks(axis.min, axis.max, target);
+    const range = axis.max - axis.min;
+    const step = [3, 6, 12].find((s) => range / s <= target) || 12;
+    const out = [];
+    for (let v = Math.ceil(axis.min / step) * step; v <= axis.max; v += step) out.push(v);
+    return out;
+  }
+
+  function axisLabel(axis, v) {
+    if (axis.format !== 'feet') return fmt(v);
+    return `${Math.floor(v / 12)}′${Math.round(v % 12)}″`;
+  }
+
   function fmt(v) {
     return String(+v.toFixed(2)).replace('-', '−');
   }
@@ -138,11 +154,11 @@
         ctx.textBaseline = 'middle';
         ctx.strokeStyle = THEME.gridStrong;
         ctx.beginPath();
-        for (const v of ticks(this.yr.min, this.yr.max, this.plot.h < 220 ? 4 : 6)) {
+        for (const v of axisTicks(this.yr, this.plot.h < 220 ? 4 : 6)) {
           const y = Math.round(this.yToPx(v)) + 0.5;
           ctx.moveTo(plot.l, y);
           ctx.lineTo(plot.r, y);
-          ctx.fillText(fmt(v), plot.l - 6, y);
+          ctx.fillText(axisLabel(this.yr, v), plot.l - 6, y);
         }
         ctx.stroke();
         if (this.yr.min < 0 && this.yr.max > 0) {
@@ -168,11 +184,11 @@
         ctx.strokeStyle = THEME.gridStrong;
         ctx.beginPath();
         const target = Math.max(3, Math.min(8, Math.floor(plot.w / 70)));
-        for (const v of ticks(prompt.x.min, prompt.x.max, target)) {
+        for (const v of axisTicks(prompt.x, target)) {
           const x = Math.round(this.xToPx(v)) + 0.5;
           ctx.moveTo(x, plot.t);
           ctx.lineTo(x, plot.b);
-          ctx.fillText(fmt(v), x, plot.b + 6);
+          ctx.fillText(axisLabel(prompt.x, v), x, plot.b + 6);
         }
         ctx.stroke();
       }

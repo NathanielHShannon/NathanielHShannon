@@ -5,8 +5,11 @@ const assert = require('node:assert');
 const WebSocket = require('ws');
 const { server, PROMPTS } = require('../server');
 
+const sockets = [];
+
 function client(port) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  sockets.push(ws);
   const c = { ws, state: null, joined: null, errors: [], waiters: [] };
   ws.on('message', (raw) => {
     const m = JSON.parse(raw);
@@ -27,17 +30,23 @@ function client(port) {
 }
 
 function answerFor(prompt, quality) {
-  // quality 1 = exact, lower = shifted down
+  // quality 1 = exact, lower = shifted up by (1 − quality) of the chart height.
+  // Shift up, not down: several answers sit at the axis floor, where a downward
+  // shift would be clamped and score better than expected.
   const shift = (prompt.type === 'distribution' ? 0 : (prompt.y.max - prompt.y.min)) * (1 - quality);
-  if (prompt.type === 'bar') return { values: prompt.values.map((v) => v - shift) };
-  if (prompt.type === 'interaction') return { series: prompt.series.map((s) => s.values.map((v) => v - shift)) };
+  if (prompt.type === 'bar') return { values: prompt.values.map((v) => v + shift) };
+  if (prompt.type === 'interaction') return { series: prompt.series.map((s) => s.values.map((v) => v + shift)) };
   return { strokes: [[[prompt.x.min, 0.5], [prompt.x.max, 0.5]]] };
 }
 
 test('full game: create, join, draw, lock, reveal, final, play again', async (t) => {
   await new Promise((r) => server.listen(0, r));
   const port = server.address().port;
-  t.after(() => server.close());
+  // Close every socket even if an assertion fails, so a failure can't hang the run.
+  t.after(() => {
+    sockets.forEach((ws) => ws.terminate());
+    server.close();
+  });
 
   const host = client(port);
   await host.open;

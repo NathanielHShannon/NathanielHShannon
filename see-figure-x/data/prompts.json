@@ -89,10 +89,10 @@
     "title": "Global Temperature",
     "prompt": "How has global average surface temperature changed since 1880, compared with the 1951–1980 average? (Smoothed, so ignore year-to-year noise.)",
     "xLabel": "Year",
-    "yLabel": "Temperature anomaly (°C)",
+    "yLabel": "Temperature anomaly (°F)",
     "x": { "min": 1880, "max": 2023 },
-    "y": { "min": -0.6, "max": 1.4 },
-    "points": [[1880, -0.18], [1890, -0.25], [1900, -0.2], [1910, -0.4], [1920, -0.27], [1930, -0.15], [1940, 0.05], [1950, -0.08], [1960, -0.03], [1970, 0.0], [1980, 0.2], [1990, 0.38], [2000, 0.48], [2010, 0.7], [2020, 1.0], [2023, 1.15]],
+    "y": { "min": -1.0, "max": 2.5 },
+    "points": [[1880, -0.32], [1890, -0.45], [1900, -0.36], [1910, -0.72], [1920, -0.49], [1930, -0.27], [1940, 0.09], [1950, -0.14], [1960, -0.05], [1970, 0.0], [1980, 0.36], [1990, 0.68], [2000, 0.86], [2010, 1.26], [2020, 1.8], [2023, 2.07]],
     "source": "Hansen, J., Ruedy, R., Sato, M., & Lo, K. (2010). Global surface temperature change. Reviews of Geophysics, 48(4). Data: NASA GISTEMP v4.",
     "takeaway": "Roughly flat with wobbles until the 1970s, then a steady climb — most of the warming has happened in the last 50 years.",
     "note": "Approximate smoothed values."
@@ -103,12 +103,12 @@
     "title": "How Corn Grows",
     "prompt": "A Midwest farmer plants field corn. How tall is the plant over the first three months after planting?",
     "xLabel": "Days after planting",
-    "yLabel": "Plant height (meters)",
+    "yLabel": "Plant height (feet)",
     "x": { "min": 0, "max": 90 },
-    "y": { "min": 0, "max": 3 },
-    "points": [[0, 0], [10, 0.02], [20, 0.12], [30, 0.35], [40, 0.75], [50, 1.4], [60, 2.1], [65, 2.45], [70, 2.6], [80, 2.65], [90, 2.65]],
+    "y": { "min": 0, "max": 10 },
+    "points": [[0, 0.0], [10, 0.1], [20, 0.4], [30, 1.1], [40, 2.5], [50, 4.6], [60, 6.9], [65, 8.0], [70, 8.5], [80, 8.7], [90, 8.7]],
     "source": "Abendroth, L. J., Elmore, R. W., Boyer, M. J., & Marlay, S. K. (2011). Corn Growth and Development (PMR 1009). Iowa State University Extension.",
-    "takeaway": "An S-curve: almost nothing for weeks, a stalk-elongation sprint of several centimeters a day, then height stops once the tassel emerges.",
+    "takeaway": "An S-curve: almost nothing for weeks, a stalk-elongation sprint of 2–3 inches a day, then height stops at about 8½ feet once the tassel emerges.",
     "note": "Approximate typical growth curve; actual timing depends on hybrid and temperature."
   },
   {
@@ -143,13 +143,19 @@
     "type": "distribution",
     "title": "How Tall Are Adults?",
     "prompt": "Take every adult in the U.S. — men and women together. Draw the shape of the height distribution.",
-    "xLabel": "Height (cm)",
+    "xLabel": "Height (feet and inches)",
     "yLabel": "How common →",
-    "x": { "min": 135, "max": 205 },
-    "dist": { "kind": "mixture", "components": [{ "w": 0.5, "mean": 175.3, "sd": 7.6 }, { "w": 0.5, "mean": 161.3, "sd": 7.1 }] },
+    "x": { "min": 53, "max": 81, "format": "feet" },
+    "dist": {
+      "kind": "mixture",
+      "components": [
+        { "w": 0.5, "mean": 69.0, "sd": 3.0 },
+        { "w": 0.5, "mean": 63.5, "sd": 2.8 }
+      ]
+    },
     "source": "Schilling, M. F., Watkins, A. E., & Watkins, W. (2002). Is human height bimodal? The American Statistician, 56(3), 223–229. Means/SDs: CDC NHANES 2015–2018.",
-    "takeaway": "Not two humps! Men and women differ by about 14 cm, but that's too small relative to the spread within each group to split the curve.",
-    "note": "50/50 mixture of two normal curves using NHANES means."
+    "takeaway": "Not two humps! Men (about 5′9″) and women (about 5′3½″) differ by about 5½ inches, but that's too small relative to the spread within each group to split the curve.",
+    "note": "50/50 mixture of two normal curves using NHANES means and SDs, converted to inches."
   },
   {
     "id": "old-faithful",
@@ -159,7 +165,13 @@
     "xLabel": "Eruption length (minutes)",
     "yLabel": "How common →",
     "x": { "min": 1, "max": 6 },
-    "dist": { "kind": "mixture", "components": [{ "w": 0.36, "mean": 2.04, "sd": 0.27 }, { "w": 0.64, "mean": 4.29, "sd": 0.41 }] },
+    "dist": {
+      "kind": "mixture",
+      "components": [
+        { "w": 0.36, "mean": 2.04, "sd": 0.27 },
+        { "w": 0.64, "mean": 4.29, "sd": 0.41 }
+      ]
+    },
     "source": "Azzalini, A., & Bowman, A. W. (1990). A look at some data on the Old Faithful geyser. Journal of the Royal Statistical Society, Series C, 39(3), 357–365.",
     "takeaway": "Two clear humps — short (about 2 min) and long (about 4.5 min) eruptions — and almost nothing in between.",
     "note": "Two-component normal fit to the classic 272-eruption data set."
@@ -279,28 +291,28 @@
     "type": "trend",
     "title": "Regression to the Mean",
     "prompt": "Galton measured hundreds of families. Draw the trend: the parents' average height vs. their adult children's height.",
-    "xLabel": "Parents' average height (inches)",
-    "yLabel": "Adult child's height (inches)",
-    "x": { "min": 63, "max": 74 },
-    "y": { "min": 62, "max": 75 },
+    "xLabel": "Parents' average height",
+    "yLabel": "Adult child's height",
+    "x": { "min": 63, "max": 74, "format": "feet" },
+    "y": { "min": 62, "max": 75, "format": "feet" },
     "points": [[63, 64.8], [74, 72.0]],
     "source": "Galton, F. (1886). Regression towards mediocrity in hereditary stature. Journal of the Anthropological Institute, 15, 246–263.",
     "takeaway": "The slope is only about 2/3: very tall parents have tall kids, but not quite as tall. Galton named the effect 'regression' — the origin of the word.",
-    "note": "Trend line with slope ≈ 0.65 through the mean (≈ 68.2 in); female heights were scaled by 1.08 as Galton did."
+    "note": "Trend line with slope ≈ 0.65 through the mean (≈ 5′8″); female heights were scaled by 1.08 as Galton did."
   },
   {
     "id": "hubble-law",
     "type": "trend",
     "title": "Hubble's Expanding Universe",
-    "prompt": "Hubble measured how far away galaxies are and how fast they move toward (negative) or away from us (positive). Draw the trend line.",
-    "xLabel": "Distance (millions of parsecs)",
-    "yLabel": "Velocity (km/s)",
-    "x": { "min": 0, "max": 2.2 },
-    "y": { "min": -400, "max": 1200 },
-    "points": [[0, 0], [2.2, 1100]],
+    "prompt": "Hubble measured how far away galaxies are and how fast they move toward us (negative) or away from us (positive). Draw the trend line.",
+    "xLabel": "Distance (millions of light-years)",
+    "yLabel": "Velocity (miles per second)",
+    "x": { "min": 0, "max": 7 },
+    "y": { "min": -250, "max": 750 },
+    "points": [[0, 0], [7, 666.8]],
     "source": "Hubble, E. (1929). A relation between distance and radial velocity among extra-galactic nebulae. PNAS, 15(3), 168–173.",
-    "takeaway": "The farther away a galaxy is, the faster it recedes — evidence that the universe is expanding. (Hubble's slope of about 500 was about 7× too high; today it's about 70.)",
-    "note": "Hubble's fitted line, about 500 km/s per megaparsec."
+    "takeaway": "The farther away a galaxy is, the faster it recedes — evidence that the universe is expanding. (Hubble's slope was about 7× too steep because his distances were off; today's value is about 13 miles per second per million light-years.)",
+    "note": "Hubble's fitted line (500 km/s per megaparsec), converted to about 95 miles per second per million light-years."
   },
   {
     "id": "dunning-kruger",
@@ -312,8 +324,14 @@
     "y": { "min": 0, "max": 100 },
     "categories": ["Bottom", "Second", "Third", "Top"],
     "series": [
-      { "name": "Actual score", "values": [12, 37, 63, 86] },
-      { "name": "Self-estimate", "values": [62, 63, 67, 74] }
+      {
+        "name": "Actual score",
+        "values": [12, 37, 63, 86]
+      },
+      {
+        "name": "Self-estimate",
+        "values": [62, 63, 67, 74]
+      }
     ],
     "source": "Kruger, J., & Dunning, D. (1999). Unskilled and unaware of it. Journal of Personality and Social Psychology, 77(6), 1121–1134.",
     "takeaway": "Everyone thought they were above average. The bottom group overestimated by about 50 points, while the top group slightly underestimated themselves.",
@@ -329,8 +347,14 @@
     "y": { "min": 0, "max": 16 },
     "categories": ["On land", "Underwater"],
     "series": [
-      { "name": "Learned on land", "values": [13.5, 8.6] },
-      { "name": "Learned underwater", "values": [8.4, 11.4] }
+      {
+        "name": "Learned on land",
+        "values": [13.5, 8.6]
+      },
+      {
+        "name": "Learned underwater",
+        "values": [8.4, 11.4]
+      }
     ],
     "source": "Godden, D. R., & Baddeley, A. D. (1975). Context-dependent memory in two natural environments: On land and underwater. British Journal of Psychology, 66(3), 325–331.",
     "takeaway": "A crossover interaction: you remember best in the place you learned — about 40% more words when the settings matched.",
