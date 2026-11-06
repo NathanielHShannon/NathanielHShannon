@@ -34,9 +34,27 @@
   let cancelAnim = null;
   let timers = [];
 
+  // A standalone build embeds the figures in the page (window.SFX_PROMPTS);
+  // otherwise they come live from the server.
+  const STATIC = Array.isArray(window.SFX_PROMPTS);
+  if (STATIC) {
+    $('back').hidden = true;
+    $('reload-note').hidden = true;
+  }
+
   async function load() {
     let data;
-    try {
+    if (STATIC) {
+      data = { prompts: [], errors: [] };
+      for (const p of window.SFX_PROMPTS) {
+        try {
+          S.validatePrompt(p);
+          data.prompts.push(p);
+        } catch (e) {
+          data.errors.push(e.message);
+        }
+      }
+    } else try {
       const res = await fetch('/api/prompts', { cache: 'no-store' });
       if (!res.ok) throw new Error(await res.text());
       data = await res.json();

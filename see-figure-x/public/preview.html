@@ -12,7 +12,7 @@
     <header class="bar">
       <div class="logo small"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 26 L11 15 L17 19 L27 6" /></svg></span>See Figure <b>X</b></div>
       <div class="bar-mid"><span class="badge">Preview</span></div>
-      <div class="bar-right"><a class="back" href="/">Back to game</a></div>
+      <div class="bar-right"><a class="back" id="back" href="/">Back to game</a></div>
     </header>
     <main class="round preview">
       <section class="picker">
@@ -47,7 +47,7 @@
           <button id="next-after" class="primary">Next figure</button>
         </div>
       </div>
-      <p class="fine center">
+      <p class="fine center" id="reload-note">
         Edits to <code>data/prompts.json</code> show up here when you
         <button class="link inline" id="reload">reload the figures</button>. Games in progress use the copy loaded when the server started.
       </p>

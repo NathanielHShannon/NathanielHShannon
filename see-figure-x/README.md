@@ -54,6 +54,8 @@ Open **`/preview`** (or tap "Practice on your own" on the home screen). Pick any
 
 The preview re-reads `data/prompts.json` each time you tap "reload the figures" or refresh the page, so you can edit an entry and check it right away without restarting the server. Malformed entries are listed at the top of the page with the reason (e.g. `points must be sorted by x`) instead of breaking anything. Links like `/preview#milgram` open a specific figure.
 
+To get a single file you can open anywhere without the server (on a phone, or to share), run `node scripts/build-standalone.js`. It bundles the preview page and every figure into `dist/see-figure-x-preview.html`.
+
 The preview shows every answer, so set `PREVIEW=off` when running a public server where players could open it.
 
 To run a real game with only specific prompts, start with `GB_ONLY=milgram,old-faithful npm start`; only those prompts are used, in that order.
