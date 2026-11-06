@@ -1,6 +1,6 @@
 'use strict';
 /*
- * Graphic Bias — game server.
+ * See Figure X — game server.
  * Serves the web client and runs rooms over WebSockets. The server is the source
  * of truth for phases, timers, drawings and scores; answers are only sent to
  * clients once a round reaches its reveal.
@@ -503,7 +503,7 @@ wss.on('close', () => clearInterval(heartbeat));
 
 if (require.main === module) {
   server.listen(PORT, () => {
-    console.log(`Graphic Bias running at http://localhost:${PORT}  (${PROMPTS.length} prompts loaded)`);
+    console.log(`See Figure X running at http://localhost:${PORT}  (${PROMPTS.length} prompts loaded)`);
   });
 }
 

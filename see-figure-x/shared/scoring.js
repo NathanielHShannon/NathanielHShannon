@@ -1,5 +1,5 @@
 /*
- * Graphic Bias — shared scoring and curve math.
+ * See Figure X — shared scoring and curve math.
  * Loaded by the Node server (require) and by the browser (window.GBScoring),
  * so the score a player sees is computed by exactly the same code the server uses.
  *

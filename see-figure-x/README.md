@@ -1,4 +1,4 @@
-# Graphic Bias
+# See Figure X
 
 A real-time party game for 2–8 players. Each round shows a prompt about a real scientific finding and a chart with labeled axes. Everyone sketches what they *think* the data looks like on their own phone. Then the real data is revealed on top of everyone's drawings, along with the citation. The fun is in arguing about why your expectations were so far off.
 
@@ -29,7 +29,7 @@ error       = round(100 × RMSE(drawing, real data) / chart height), capped at 1
 ## Running it
 
 ```bash
-cd graphic-bias
+cd see-figure-x
 npm install
 npm start          # http://localhost:3000  (set PORT to change)
 npm test

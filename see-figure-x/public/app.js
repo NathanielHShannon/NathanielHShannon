@@ -1,4 +1,4 @@
-/* Graphic Bias — client app. */
+/* See Figure X — client app. */
 (function () {
   'use strict';
   const S = window.GBScoring;
@@ -151,7 +151,7 @@
   }
 
   const logo = (small) =>
-    `<div class="logo ${small ? 'small' : ''}"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 26 L11 15 L17 19 L27 6" /></svg></span>Graphic <b>Bias</b></div>`;
+    `<div class="logo ${small ? 'small' : ''}"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 26 L11 15 L17 19 L27 6" /></svg></span>See Figure <b>X</b></div>`;
 
   // ----- home -----
   function renderHome() {
@@ -298,9 +298,12 @@
     };
   }
 
+  // Paper-style caption number, e.g. "Figure 3."
+  const figNo = () => `<span class="fig-no">Figure ${state.round.index + 1}.</span> `;
+
   // ----- round: preview + draw -----
   function promptCard(p, big) {
-    return `<section class="prompt-card ${big ? 'big' : ''}"><h1>${esc(p.title)}</h1><p>${esc(p.prompt)}</p></section>`;
+    return `<section class="prompt-card ${big ? 'big' : ''}"><h1>${figNo()}${esc(p.title)}</h1><p>${esc(p.prompt)}</p></section>`;
   }
 
   function renderRound() {
@@ -462,7 +465,7 @@
       ${header()}
       <main class="reveal ${isDisplay ? 'wide' : ''}">
         <div class="reveal-main">
-          <section class="prompt-card compact"><h1>${esc(p.title)}</h1><p>${esc(p.prompt)}</p></section>
+          <section class="prompt-card compact"><h1>${figNo()}${esc(p.title)}</h1><p>${esc(p.prompt)}</p></section>
           <div class="chart-wrap"><canvas id="chart"></canvas></div>
           <ul class="legend">
             <li><span class="swatch truth"></span>Real data</li>

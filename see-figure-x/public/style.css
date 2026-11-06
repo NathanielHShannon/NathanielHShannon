@@ -377,6 +377,10 @@ label {
   color: var(--accent);
   margin-bottom: 4px;
 }
+.fig-no {
+  color: var(--text);
+  font-weight: 800;
+}
 .prompt-card p {
   margin: 0;
   line-height: 1.45;

@@ -1,5 +1,5 @@
 {
-  "name": "graphic-bias",
+  "name": "see-figure-x",
   "version": "1.0.0",
   "description": "A real-time party game: sketch what you think the science says, then see the real data.",
   "main": "server.js",

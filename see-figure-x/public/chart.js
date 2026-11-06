@@ -1,4 +1,4 @@
-/* Graphic Bias — chart rendering and the touch drawing pad. */
+/* See Figure X — chart rendering and the touch drawing pad. */
 (function () {
   'use strict';
   const S = window.GBScoring;
