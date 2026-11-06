@@ -48,7 +48,15 @@ All prompts are in [`data/prompts.json`](data/prompts.json) and are validated wh
 | `bar` | `y` range; `categories`; `values` |
 | `interaction` | `y` range; `categories`; exactly two `series`: `{ name, values }` |
 
-To try specific prompts, run `GB_ONLY=milgram,old-faithful npm start` and only those prompts are used, in that order.
+### Testing figures without a game
+
+Open **`/preview`** (or tap "Practice on your own" on the home screen). Pick any figure from the list, draw it, and tap **Reveal** to see the real data and your score. Tap **Show answer** with an empty pad to see the answer without drawing. No room or other players are needed.
+
+The preview re-reads `data/prompts.json` each time you tap "reload the figures" or refresh the page, so you can edit an entry and check it right away without restarting the server. Malformed entries are listed at the top of the page with the reason (e.g. `points must be sorted by x`) instead of breaking anything. Links like `/preview#milgram` open a specific figure.
+
+The preview shows every answer, so set `PREVIEW=off` when running a public server where players could open it.
+
+To run a real game with only specific prompts, start with `GB_ONLY=milgram,old-faithful npm start`; only those prompts are used, in that order.
 
 **About the data.** Several prompts use values read off published figures or fitted to published summary statistics. Each prompt's `note` says which (e.g. "Approximate, digitized from…"). Check them against the original sources before relying on them for teaching.
 
@@ -58,6 +66,7 @@ To try specific prompts, run `GB_ONLY=milgram,old-faithful npm start` and only t
 server.js           HTTP + WebSocket server, rooms, phases, timers, scoring
 shared/scoring.js   curve math and scoring (used by both server and browser)
 data/prompts.json   the prompt bank with citations
-public/             client: index.html, app.js (screens), chart.js (canvas + drawing pad), style.css
+public/             client: index.html + app.js (game), preview.html + preview.js (practice),
+                    chart.js (canvas + drawing pad), ui.js (score animation), style.css
 test/               scoring unit tests + a full multiplayer game over WebSockets
 ```

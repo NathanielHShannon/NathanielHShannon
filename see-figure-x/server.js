@@ -12,10 +12,13 @@ const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 const scoring = require('./shared/scoring');
 
-const PROMPTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/prompts.json'), 'utf8'));
+const PROMPTS_FILE = path.join(__dirname, 'data/prompts.json');
+const PROMPTS = JSON.parse(fs.readFileSync(PROMPTS_FILE, 'utf8'));
 PROMPTS.forEach(scoring.validatePrompt);
 
 const PORT = Number(process.env.PORT) || 3000;
+// The preview page exposes every answer, so it can be turned off for public servers.
+const PREVIEW_ENABLED = process.env.PREVIEW !== 'off';
 const PREVIEW_MS = 8000;
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 8;
@@ -42,6 +45,14 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     return res.end('ok');
   }
+  if (urlPath === '/preview' || urlPath === '/api/prompts') {
+    if (!PREVIEW_ENABLED) {
+      res.writeHead(404);
+      return res.end('Preview is disabled on this server.');
+    }
+    if (urlPath === '/api/prompts') return sendPreviewPrompts(res);
+    return sendFile(res, path.join(STATIC_ROOTS['/'], 'preview.html'));
+  }
   const prefix = urlPath.startsWith('/shared/') ? '/shared/' : '/';
   const root = STATIC_ROOTS[prefix];
   const rel = urlPath.slice(prefix.length) || 'index.html';
@@ -62,10 +73,45 @@ const server = http.createServer((req, res) => {
   });
 });
 
-function sendIndex(res) {
-  fs.readFile(path.join(STATIC_ROOTS['/'], 'index.html'), (err, data) => {
-    res.writeHead(err ? 500 : 200, { 'Content-Type': MIME['.html'] });
+function sendFile(res, file) {
+  fs.readFile(file, (err, data) => {
+    res.writeHead(err ? 500 : 200, { 'Content-Type': MIME[path.extname(file)], 'Cache-Control': 'no-cache' });
     res.end(data);
+  });
+}
+
+function sendIndex(res) {
+  sendFile(res, path.join(STATIC_ROOTS['/'], 'index.html'));
+}
+
+// The preview page re-reads prompts.json on every load, so edits show up on
+// refresh without restarting. Bad entries are reported instead of thrown.
+// (The game itself uses the copy loaded at startup.)
+function sendPreviewPrompts(res) {
+  const reply = (status, body) => {
+    res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify(body));
+  };
+  fs.readFile(PROMPTS_FILE, 'utf8', (err, text) => {
+    if (err) return reply(500, { prompts: [], errors: ['Could not read data/prompts.json: ' + err.message] });
+    let list;
+    try {
+      list = JSON.parse(text);
+      if (!Array.isArray(list)) throw new Error('the file must contain a JSON array');
+    } catch (e) {
+      return reply(200, { prompts: [], errors: ['data/prompts.json is not valid JSON: ' + e.message] });
+    }
+    const prompts = [];
+    const errors = [];
+    for (const p of list) {
+      try {
+        scoring.validatePrompt(p);
+        prompts.push(p);
+      } catch (e) {
+        errors.push(e.message);
+      }
+    }
+    reply(200, { prompts, errors });
   });
 }
 

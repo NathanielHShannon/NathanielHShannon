@@ -48,6 +48,13 @@ test('full game: create, join, draw, lock, reveal, final, play again', async (t)
     server.close();
   });
 
+  // Preview page and its live prompt list.
+  const page = await fetch(`http://127.0.0.1:${port}/preview`);
+  assert.match(await page.text(), /preview\.js/);
+  const api = await (await fetch(`http://127.0.0.1:${port}/api/prompts`)).json();
+  assert.strictEqual(api.prompts.length, PROMPTS.length);
+  assert.deepStrictEqual(api.errors, []);
+
   const host = client(port);
   await host.open;
   host.send({ type: 'create', mode: 'display' });

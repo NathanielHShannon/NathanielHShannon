@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0a1120" />
+    <title>See Figure X — Preview</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d1526'/%3E%3Cpath d='M5 25 L12 15 L18 19 L27 7' fill='none' stroke='%23ffd43b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body data-role="preview">
+    <header class="bar">
+      <div class="logo small"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 26 L11 15 L17 19 L27 6" /></svg></span>See Figure <b>X</b></div>
+      <div class="bar-mid"><span class="badge">Preview</span></div>
+      <div class="bar-right"><a class="back" href="/">Back to game</a></div>
+    </header>
+    <main class="round preview">
+      <section class="picker">
+        <select id="pick" aria-label="Choose a figure"></select>
+        <div class="picker-btns">
+          <button id="prev" aria-label="Previous figure">‹ Prev</button>
+          <button id="random">Random</button>
+          <button id="next-fig" aria-label="Next figure">Next ›</button>
+        </div>
+        <p class="fine meta" id="meta"></p>
+      </section>
+      <section class="problems" id="problems" hidden></section>
+      <section class="prompt-card" id="prompt"></section>
+      <div class="chart-wrap pad" id="wrap"><canvas id="chart"></canvas></div>
+      <div id="series"></div>
+      <p class="hint" id="hint"></p>
+      <div class="tools" id="tools">
+        <button id="undo">Undo</button>
+        <button id="clear">Clear</button>
+        <button id="reveal" class="primary">Reveal</button>
+      </div>
+      <div id="result" hidden>
+        <ul class="legend">
+          <li><span class="swatch truth"></span>Real data</li>
+          <li><span class="swatch" style="--c: var(--you)"></span>Your drawing</li>
+          <span id="legend-series"></span>
+        </ul>
+        <div class="score-cards" id="card"></div>
+        <section class="finding" id="finding"></section>
+        <div class="tools two">
+          <button id="again">Try again</button>
+          <button id="next-after" class="primary">Next figure</button>
+        </div>
+      </div>
+      <p class="fine center">
+        Edits to <code>data/prompts.json</code> show up here when you
+        <button class="link inline" id="reload">reload the figures</button>. Games in progress use the copy loaded when the server started.
+      </p>
+    </main>
+    <script src="/shared/scoring.js"></script>
+    <script src="/chart.js"></script>
+    <script src="/ui.js"></script>
+    <script src="/preview.js"></script>
+  </body>
+</html>
