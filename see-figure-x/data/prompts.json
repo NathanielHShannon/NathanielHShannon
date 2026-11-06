@@ -1,0 +1,363 @@
+[
+  {
+    "id": "ebbinghaus-forgetting",
+    "type": "line",
+    "title": "The Forgetting Curve",
+    "prompt": "Ebbinghaus memorized lists of nonsense syllables, then tested himself later. How much did he still retain after each delay, up to a month?",
+    "xLabel": "Days since learning",
+    "yLabel": "Retained (% savings when relearning)",
+    "x": { "min": 0, "max": 31 },
+    "y": { "min": 0, "max": 100 },
+    "points": [[0, 100], [0.0139, 58.2], [0.0417, 44.2], [0.375, 35.8], [1, 33.7], [2, 27.8], [6, 25.4], [31, 21.1]],
+    "source": "Ebbinghaus, H. (1885). Über das Gedächtnis [Memory: A Contribution to Experimental Psychology].",
+    "takeaway": "Almost half was gone within an hour — but after the first day, forgetting nearly flattens out.",
+    "note": "Values from Ebbinghaus's savings table (20 min, 1 h, 9 h, 1, 2, 6 and 31 days)."
+  },
+  {
+    "id": "keeling-curve",
+    "type": "line",
+    "title": "The Keeling Curve",
+    "prompt": "Atmospheric CO₂ has been measured continuously at Mauna Loa, Hawaii since 1958. Sketch the yearly average from 1959 to 2023.",
+    "xLabel": "Year",
+    "yLabel": "CO₂ (parts per million)",
+    "x": { "min": 1959, "max": 2023 },
+    "y": { "min": 300, "max": 440 },
+    "points": [[1959, 316], [1965, 320], [1970, 325.7], [1975, 331.1], [1980, 338.8], [1985, 346.4], [1990, 354.4], [1995, 360.8], [2000, 369.7], [2005, 379.8], [2010, 389.9], [2015, 401.0], [2020, 414.2], [2023, 421.1]],
+    "source": "Keeling, C. D. (1960). The concentration and isotopic abundances of carbon dioxide in the atmosphere. Tellus, 12(2). Annual means: NOAA Global Monitoring Laboratory.",
+    "takeaway": "It isn't just rising — it's accelerating: about 0.8 ppm per year in the 1960s vs. about 2.4 ppm per year lately.",
+    "note": "Annual means, rounded; the seasonal wiggle is smoothed out."
+  },
+  {
+    "id": "serial-position",
+    "type": "line",
+    "title": "The Serial Position Effect",
+    "prompt": "People hear a list of 20 words, then recall as many as they can in any order. How likely is each word to be recalled, by its position in the list?",
+    "xLabel": "Position in the list",
+    "yLabel": "Chance of recall (%)",
+    "x": { "min": 1, "max": 20 },
+    "y": { "min": 0, "max": 100 },
+    "points": [[1, 46], [2, 36], [3, 30], [4, 26], [5, 22], [6, 20], [8, 18], [10, 17], [12, 17], [14, 19], [15, 22], [16, 27], [17, 36], [18, 50], [19, 65], [20, 80]],
+    "source": "Murdock, B. B. (1962). The serial position effect of free recall. Journal of Experimental Psychology, 64(5), 482–488.",
+    "takeaway": "A U-shape: the first words get rehearsed (primacy) and the last ones are still in short-term memory (recency). The middle is a memory dead zone.",
+    "note": "Approximate, digitized from the 20-word list condition."
+  },
+  {
+    "id": "age-crime",
+    "type": "line",
+    "title": "The Age–Crime Curve",
+    "prompt": "How does the arrest rate change across the lifespan? Show it as a percentage of the peak age's rate.",
+    "xLabel": "Age (years)",
+    "yLabel": "Arrest rate (% of peak)",
+    "x": { "min": 10, "max": 70 },
+    "y": { "min": 0, "max": 100 },
+    "points": [[10, 3], [12, 15], [14, 50], [16, 85], [18, 100], [19, 100], [21, 90], [25, 72], [30, 55], [35, 45], [40, 36], [45, 27], [50, 19], [55, 12], [60, 8], [65, 5], [70, 3]],
+    "source": "Hirschi, T., & Gottfredson, M. (1983). Age and the explanation of crime. American Journal of Sociology, 89(3), 552–584.",
+    "takeaway": "A sharp spike in the late teens, then a long decline — a shape that shows up across eras and countries.",
+    "note": "Approximate shape based on U.S. arrest data, rescaled to the peak."
+  },
+  {
+    "id": "sleep-lifespan",
+    "type": "line",
+    "title": "Sleep Across the Lifespan",
+    "prompt": "How many hours of sleep per day do people get, from newborns to age 85?",
+    "xLabel": "Age (years)",
+    "yLabel": "Total sleep (hours per day)",
+    "x": { "min": 0, "max": 85 },
+    "y": { "min": 0, "max": 18 },
+    "points": [[0, 16], [0.3, 14], [1.2, 13], [2.5, 12], [4, 11], [7, 10.5], [11.5, 10], [16, 8.5], [25, 7.75], [40, 7], [60, 6], [77, 5.75], [85, 5.75]],
+    "source": "Roffwarg, H. P., Muzio, J. N., & Dement, W. C. (1966). Ontogenetic development of the human sleep-dream cycle. Science, 152(3722), 604–619.",
+    "takeaway": "Most of the drop happens in childhood. Adulthood is a slow slide — and later research suggests older adults lose less than this classic figure shows.",
+    "note": "Age-group values from the classic figure, plotted at group midpoints."
+  },
+  {
+    "id": "world-population",
+    "type": "line",
+    "title": "World Population",
+    "prompt": "Sketch the number of people alive on Earth from 1800 to 2023.",
+    "xLabel": "Year",
+    "yLabel": "World population (billions)",
+    "x": { "min": 1800, "max": 2023 },
+    "y": { "min": 0, "max": 9 },
+    "points": [[1800, 0.98], [1850, 1.26], [1900, 1.65], [1927, 2.0], [1950, 2.5], [1960, 3.0], [1970, 3.7], [1980, 4.4], [1990, 5.3], [2000, 6.1], [2010, 6.9], [2020, 7.8], [2023, 8.0]],
+    "source": "United Nations, Department of Economic and Social Affairs (2022). World Population Prospects 2022; historical estimates compiled by Our World in Data.",
+    "takeaway": "It took all of human history to reach 1 billion (around 1800), and only 12 years to go from 7 to 8 billion.",
+    "note": "Rounded estimates."
+  },
+  {
+    "id": "global-temperature",
+    "type": "line",
+    "title": "Global Temperature",
+    "prompt": "How has global average surface temperature changed since 1880, compared with the 1951–1980 average? (Smoothed, so ignore year-to-year noise.)",
+    "xLabel": "Year",
+    "yLabel": "Temperature anomaly (°F)",
+    "x": { "min": 1880, "max": 2023 },
+    "y": { "min": -1.0, "max": 2.5 },
+    "points": [[1880, -0.32], [1890, -0.45], [1900, -0.36], [1910, -0.72], [1920, -0.49], [1930, -0.27], [1940, 0.09], [1950, -0.14], [1960, -0.05], [1970, 0.0], [1980, 0.36], [1990, 0.68], [2000, 0.86], [2010, 1.26], [2020, 1.8], [2023, 2.07]],
+    "source": "Hansen, J., Ruedy, R., Sato, M., & Lo, K. (2010). Global surface temperature change. Reviews of Geophysics, 48(4). Data: NASA GISTEMP v4.",
+    "takeaway": "Roughly flat with wobbles until the 1970s, then a steady climb — most of the warming has happened in the last 50 years.",
+    "note": "Approximate smoothed values."
+  },
+  {
+    "id": "corn-height",
+    "type": "line",
+    "title": "How Corn Grows",
+    "prompt": "A Midwest farmer plants field corn. How tall is the plant over the first three months after planting?",
+    "xLabel": "Days after planting",
+    "yLabel": "Plant height (feet)",
+    "x": { "min": 0, "max": 90 },
+    "y": { "min": 0, "max": 10 },
+    "points": [[0, 0.0], [10, 0.1], [20, 0.4], [30, 1.1], [40, 2.5], [50, 4.6], [60, 6.9], [65, 8.0], [70, 8.5], [80, 8.7], [90, 8.7]],
+    "source": "Abendroth, L. J., Elmore, R. W., Boyer, M. J., & Marlay, S. K. (2011). Corn Growth and Development (PMR 1009). Iowa State University Extension.",
+    "takeaway": "An S-curve: almost nothing for weeks, a stalk-elongation sprint of 2–3 inches a day, then height stops at about 8½ feet once the tassel emerges.",
+    "note": "Approximate typical growth curve; actual timing depends on hybrid and temperature."
+  },
+  {
+    "id": "asch-group-size",
+    "type": "line",
+    "title": "Conformity and Group Size",
+    "prompt": "In Asch's line-judging experiments, a group of actors unanimously gave an obviously wrong answer. How often did the real participant go along with them, depending on how many actors there were?",
+    "xLabel": "Number of people in the wrong majority",
+    "yLabel": "Wrong answers given (%)",
+    "x": { "min": 1, "max": 15 },
+    "y": { "min": 0, "max": 50 },
+    "points": [[1, 3], [2, 13], [3, 32], [4, 35], [8, 32], [15, 31]],
+    "source": "Asch, S. E. (1956). Studies of independence and conformity: I. A minority of one against a unanimous majority. Psychological Monographs, 70(9).",
+    "takeaway": "Conformity jumps at three people, then plateaus — a crowd of 15 is no more persuasive than a group of 3.",
+    "note": "Approximate values as commonly reported from Asch's group-size variation."
+  },
+  {
+    "id": "eighth-grade-math",
+    "type": "distribution",
+    "title": "8th-Grade Math Scores",
+    "prompt": "Every 8th-grader in a national U.S. sample takes the same math test (scored 0–500). Draw the shape of the score distribution.",
+    "xLabel": "NAEP math score",
+    "yLabel": "How common →",
+    "x": { "min": 120, "max": 420 },
+    "dist": { "kind": "splitNormal", "mode": 282, "sdLeft": 44, "sdRight": 33 },
+    "source": "National Center for Education Statistics (2022). NAEP Mathematics, Grade 8 (The Nation's Report Card).",
+    "takeaway": "Close to a bell curve, centered near 275 with a slightly longer tail toward low scores — the gap between the 10th and 90th percentile is about 100 points.",
+    "note": "Approximate shape fitted to the published 2022 percentiles (10th ≈ 222, 50th ≈ 276, 90th ≈ 323)."
+  },
+  {
+    "id": "adult-height",
+    "type": "distribution",
+    "title": "How Tall Are Adults?",
+    "prompt": "Take every adult in the U.S. — men and women together. Draw the shape of the height distribution.",
+    "xLabel": "Height (feet and inches)",
+    "yLabel": "How common →",
+    "x": { "min": 53, "max": 81, "format": "feet" },
+    "dist": {
+      "kind": "mixture",
+      "components": [
+        { "w": 0.5, "mean": 69.0, "sd": 3.0 },
+        { "w": 0.5, "mean": 63.5, "sd": 2.8 }
+      ]
+    },
+    "source": "Schilling, M. F., Watkins, A. E., & Watkins, W. (2002). Is human height bimodal? The American Statistician, 56(3), 223–229. Means/SDs: CDC NHANES 2015–2018.",
+    "takeaway": "Not two humps! Men (about 5′9″) and women (about 5′3½″) differ by about 5½ inches, but that's too small relative to the spread within each group to split the curve.",
+    "note": "50/50 mixture of two normal curves using NHANES means and SDs, converted to inches."
+  },
+  {
+    "id": "old-faithful",
+    "type": "distribution",
+    "title": "Old Faithful's Eruptions",
+    "prompt": "Yellowstone's Old Faithful geyser erupts many times a day. Draw the distribution of how long each eruption lasts.",
+    "xLabel": "Eruption length (minutes)",
+    "yLabel": "How common →",
+    "x": { "min": 1, "max": 6 },
+    "dist": {
+      "kind": "mixture",
+      "components": [
+        { "w": 0.36, "mean": 2.04, "sd": 0.27 },
+        { "w": 0.64, "mean": 4.29, "sd": 0.41 }
+      ]
+    },
+    "source": "Azzalini, A., & Bowman, A. W. (1990). A look at some data on the Old Faithful geyser. Journal of the Royal Statistical Society, Series C, 39(3), 357–365.",
+    "takeaway": "Two clear humps — short (about 2 min) and long (about 4.5 min) eruptions — and almost nothing in between.",
+    "note": "Two-component normal fit to the classic 272-eruption data set."
+  },
+  {
+    "id": "reaction-time",
+    "type": "distribution",
+    "title": "Reaction Times",
+    "prompt": "People press a button as fast as possible when a light flashes, over and over. Draw the distribution of their reaction times.",
+    "xLabel": "Reaction time (milliseconds)",
+    "yLabel": "How common →",
+    "x": { "min": 100, "max": 700 },
+    "dist": { "kind": "exGaussian", "mu": 230, "sigma": 25, "tau": 60 },
+    "source": "Luce, R. D. (1986). Response Times: Their Role in Inferring Elementary Mental Organization. Oxford University Press.",
+    "takeaway": "Strongly right-skewed: there's a hard floor on how fast you can be, but lapses of attention produce a long tail of slow responses.",
+    "note": "Approximate, using a typical ex-Gaussian shape for simple visual reaction time."
+  },
+  {
+    "id": "household-income",
+    "type": "distribution",
+    "title": "Household Income",
+    "prompt": "Draw the distribution of yearly U.S. household income (0 to $250k).",
+    "xLabel": "Household income ($ thousands per year)",
+    "yLabel": "How common →",
+    "x": { "min": 0, "max": 250 },
+    "dist": { "kind": "logNormal", "median": 74.6, "sigma": 0.85 },
+    "source": "Guzman, G., & Kollar, M. (2023). Income in the United States: 2022 (Report P60-279). U.S. Census Bureau.",
+    "takeaway": "The most common incomes sit well below the median ($74.6k), and a long right tail drags the mean up to about $106k.",
+    "note": "Approximate log-normal fit matching the published median and mean."
+  },
+  {
+    "id": "benford",
+    "type": "bar",
+    "title": "Benford's Law",
+    "prompt": "Take thousands of numbers from real life — river lengths, populations, street addresses. What share start with each first digit, 1 through 9?",
+    "xLabel": "First digit",
+    "yLabel": "Share of numbers (%)",
+    "y": { "min": 0, "max": 35 },
+    "categories": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "values": [30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6],
+    "source": "Benford, F. (1938). The law of anomalous numbers. Proceedings of the American Philosophical Society, 78(4), 551–572.",
+    "takeaway": "Not 11% each! About 30% start with 1 and under 5% with 9 — forensic accountants use this to spot made-up numbers.",
+    "note": "Values from Benford's law, log₁₀(1 + 1/d), which matched Benford's 20,229 observations."
+  },
+  {
+    "id": "milgram",
+    "type": "bar",
+    "title": "Milgram's Obedience Study",
+    "prompt": "40 men were told to give a 'learner' increasingly strong electric shocks (the shocks were fake). How many stopped at each level, out of 40?",
+    "xLabel": "Highest shock given",
+    "yLabel": "Number of participants (of 40)",
+    "y": { "min": 0, "max": 40 },
+    "categories": ["Under 300 V", "300 V", "315 V", "330 V", "345–375 V", "450 V (max)"],
+    "values": [0, 5, 4, 2, 3, 26],
+    "source": "Milgram, S. (1963). Behavioral study of obedience. Journal of Abnormal and Social Psychology, 67(4), 371–378.",
+    "takeaway": "Nobody stopped before 300 volts, and 26 of 40 (65%) went all the way to the maximum — far more than psychiatrists predicted.",
+    "note": "Counts from Table 2 of the original paper."
+  },
+  {
+    "id": "zipf-words",
+    "type": "bar",
+    "title": "Zipf's Law of Words",
+    "prompt": "In a million words of published American English, what share of all words is each of the 10 most common words?",
+    "xLabel": "Word (most to least common)",
+    "yLabel": "Share of all words (%)",
+    "y": { "min": 0, "max": 8 },
+    "categories": ["the", "of", "and", "to", "a", "in", "that", "is", "was", "he"],
+    "values": [7.0, 3.6, 2.9, 2.6, 2.3, 2.1, 1.1, 1.0, 1.0, 0.95],
+    "source": "Kučera, H., & Francis, W. N. (1967). Computational Analysis of Present-Day American English (Brown Corpus). Zipf, G. K. (1949). Human Behavior and the Principle of Least Effort.",
+    "takeaway": "'The' alone is 7% of everything we write — about twice as common as 'of', the #2 word, just as Zipf's law predicts.",
+    "note": "Rounded frequencies from the Brown Corpus."
+  },
+  {
+    "id": "bystander",
+    "type": "bar",
+    "title": "The Bystander Effect",
+    "prompt": "Over an intercom, participants hear another participant having a seizure. What % went for help before the seizure ended, depending on how many people they thought were listening?",
+    "xLabel": "People who could hear (including the participant)",
+    "yLabel": "Helped before seizure ended (%)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["Just me", "3 people", "6 people"],
+    "values": [85, 62, 31],
+    "source": "Darley, J. M., & Latané, B. (1968). Bystander intervention in emergencies: Diffusion of responsibility. Journal of Personality and Social Psychology, 8(4), 377–383.",
+    "takeaway": "More bystanders, less help: responsibility gets diffused, and each person assumes someone else has it handled.",
+    "note": "Group-size labels count the participant, the victim and the other imagined listeners."
+  },
+  {
+    "id": "loftus-palmer",
+    "type": "bar",
+    "title": "Leading Questions",
+    "prompt": "People watch a film of a car crash, then are asked 'About how fast were the cars going when they ___ each other?' What was the average speed estimate for each verb?",
+    "xLabel": "Verb used in the question",
+    "yLabel": "Estimated speed (mph)",
+    "y": { "min": 0, "max": 50 },
+    "categories": ["smashed", "collided", "bumped", "hit", "contacted"],
+    "values": [40.5, 39.3, 38.1, 34.0, 31.8],
+    "source": "Loftus, E. F., & Palmer, J. C. (1974). Reconstruction of automobile destruction. Journal of Verbal Learning and Verbal Behavior, 13(5), 585–589.",
+    "takeaway": "One word changed the estimate by almost 9 mph. A week later, the 'smashed' group was also more than twice as likely to falsely remember broken glass.",
+    "note": "Means from Table 1 of the original paper."
+  },
+  {
+    "id": "preston-curve",
+    "type": "trend",
+    "title": "The Preston Curve",
+    "prompt": "Each country is a dot: income per person vs. life expectancy. Draw the trend line through the cloud of countries.",
+    "xLabel": "GDP per person ($ thousands, adjusted for prices)",
+    "yLabel": "Life expectancy (years)",
+    "x": { "min": 0, "max": 80 },
+    "y": { "min": 40, "max": 90 },
+    "points": [[1, 60], [2, 63], [3, 65.5], [5, 69], [10, 73.5], [15, 75.5], [20, 77], [30, 79], [40, 80.5], [50, 81.5], [60, 82], [80, 82.5]],
+    "source": "Preston, S. H. (1975). The changing relation between mortality and level of economic development. Population Studies, 29(2), 231–248. Modern values: World Bank (2019).",
+    "takeaway": "Steep then flat: the first $10k per person buys about 13 extra years of life; going from $40k to $80k buys about 2.",
+    "note": "Approximate trend through 2019 country data."
+  },
+  {
+    "id": "galton-regression",
+    "type": "trend",
+    "title": "Regression to the Mean",
+    "prompt": "Galton measured hundreds of families. Draw the trend: the parents' average height vs. their adult children's height.",
+    "xLabel": "Parents' average height",
+    "yLabel": "Adult child's height",
+    "x": { "min": 63, "max": 74, "format": "feet" },
+    "y": { "min": 62, "max": 75, "format": "feet" },
+    "points": [[63, 64.8], [74, 72.0]],
+    "source": "Galton, F. (1886). Regression towards mediocrity in hereditary stature. Journal of the Anthropological Institute, 15, 246–263.",
+    "takeaway": "The slope is only about 2/3: very tall parents have tall kids, but not quite as tall. Galton named the effect 'regression' — the origin of the word.",
+    "note": "Trend line with slope ≈ 0.65 through the mean (≈ 5′8″); female heights were scaled by 1.08 as Galton did."
+  },
+  {
+    "id": "hubble-law",
+    "type": "trend",
+    "title": "Hubble's Expanding Universe",
+    "prompt": "Hubble measured how far away galaxies are and how fast they move toward us (negative) or away from us (positive). Draw the trend line.",
+    "xLabel": "Distance (millions of light-years)",
+    "yLabel": "Velocity (miles per second)",
+    "x": { "min": 0, "max": 7 },
+    "y": { "min": -250, "max": 750 },
+    "points": [[0, 0], [7, 666.8]],
+    "source": "Hubble, E. (1929). A relation between distance and radial velocity among extra-galactic nebulae. PNAS, 15(3), 168–173.",
+    "takeaway": "The farther away a galaxy is, the faster it recedes — evidence that the universe is expanding. (Hubble's slope was about 7× too steep because his distances were off; today's value is about 13 miles per second per million light-years.)",
+    "note": "Hubble's fitted line (500 km/s per megaparsec), converted to about 95 miles per second per million light-years."
+  },
+  {
+    "id": "dunning-kruger",
+    "type": "interaction",
+    "title": "The Dunning–Kruger Effect",
+    "prompt": "Students took a logical reasoning test, then guessed how they did compared to their peers. Split by actual quartile: how did they really score and how did they think they scored (as percentiles)?",
+    "xLabel": "Actual performance quartile",
+    "yLabel": "Percentile",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["Bottom", "Second", "Third", "Top"],
+    "series": [
+      {
+        "name": "Actual score",
+        "values": [12, 37, 63, 86]
+      },
+      {
+        "name": "Self-estimate",
+        "values": [62, 63, 67, 74]
+      }
+    ],
+    "source": "Kruger, J., & Dunning, D. (1999). Unskilled and unaware of it. Journal of Personality and Social Psychology, 77(6), 1121–1134.",
+    "takeaway": "Everyone thought they were above average. The bottom group overestimated by about 50 points, while the top group slightly underestimated themselves.",
+    "note": "Approximate, digitized from the logical reasoning study (Study 2) figure."
+  },
+  {
+    "id": "godden-baddeley",
+    "type": "interaction",
+    "title": "Memory Underwater",
+    "prompt": "Scuba divers learned 36 words either on the beach or 20 feet underwater, then were tested on land or underwater. How many words did each group recall?",
+    "xLabel": "Where they were tested",
+    "yLabel": "Words recalled",
+    "y": { "min": 0, "max": 16 },
+    "categories": ["On land", "Underwater"],
+    "series": [
+      {
+        "name": "Learned on land",
+        "values": [13.5, 8.6]
+      },
+      {
+        "name": "Learned underwater",
+        "values": [8.4, 11.4]
+      }
+    ],
+    "source": "Godden, D. R., & Baddeley, A. D. (1975). Context-dependent memory in two natural environments: On land and underwater. British Journal of Psychology, 66(3), 325–331.",
+    "takeaway": "A crossover interaction: you remember best in the place you learned — about 40% more words when the settings matched.",
+    "note": "Mean words recalled from the original paper."
+  }
+]

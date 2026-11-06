@@ -1,0 +1,17 @@
+{
+  "name": "see-figure-x",
+  "version": "1.0.0",
+  "description": "A real-time party game: sketch what you think the science says, then see the real data.",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
