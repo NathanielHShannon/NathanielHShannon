@@ -34,7 +34,7 @@ test('a perfect drawing scores 100 for every prompt', () => {
     let d;
     if (S.isFreehand(p)) d = perfectStroke(p);
     else if (p.type === 'bar') d = { values: p.values.slice() };
-    else d = { series: p.series.map((s) => s.values.slice()) };
+    else d = { assign: [0, 1] };
     const r = S.scoreDrawing(p, S.sanitizeDrawing(p, d));
     assert.strictEqual(r.score, 100, `${p.id}: ${JSON.stringify(r)}`);
   }
@@ -66,6 +66,28 @@ test('distribution scoring ignores how tall the drawing is', () => {
   assert.ok(S.scoreDrawing(p, twoHumps).score < 90);
 });
 
+test('interaction is a labeling task: right is 100, flipped is 0', () => {
+  const p = byId('godden-baddeley');
+  // Lines shown in the original order.
+  assert.deepStrictEqual(S.scoreDrawing(p, { assign: [0, 1] }, [0, 1]), { errorPct: 0, score: 100, empty: false });
+  assert.deepStrictEqual(S.scoreDrawing(p, { assign: [1, 0] }, [0, 1]), { errorPct: 100, score: 0, empty: false });
+  // Lines shown swapped: the first line on screen is really series 1.
+  assert.strictEqual(S.scoreDrawing(p, { assign: [1, 0] }, [1, 0]).score, 100);
+  assert.strictEqual(S.scoreDrawing(p, { assign: [0, 1] }, [1, 0]).score, 0);
+  assert.deepStrictEqual(S.interactionLines(p, [1, 0]), [p.series[1].values, p.series[0].values]);
+  assert.strictEqual(S.scoreDrawing(p, { assign: null }).empty, true);
+  // Only a real two-line labeling is accepted.
+  assert.deepStrictEqual(S.sanitizeDrawing(p, { assign: [1, 0] }), { assign: [1, 0] });
+  assert.strictEqual(S.sanitizeDrawing(p, { assign: [0, 0] }), null);
+  assert.strictEqual(S.sanitizeDrawing(p, { series: [[1, 2], [3, 4]] }), null);
+});
+
+test('bar and interaction charts are limited to 4 columns', () => {
+  for (const p of PROMPTS.filter((q) => q.categories)) assert.ok(p.categories.length <= S.MAX_BARS, p.id);
+  const tooMany = { ...byId('bystander'), categories: ['a', 'b', 'c', 'd', 'e'], values: [1, 2, 3, 4, 5] };
+  assert.throws(() => S.validatePrompt(tooMany), /limit is 4/);
+});
+
 test('empty and missing drawings score zero', () => {
   for (const p of PROMPTS) {
     assert.deepStrictEqual(S.scoreDrawing(p, null), { errorPct: 100, score: 0, empty: true });
@@ -75,7 +97,7 @@ test('empty and missing drawings score zero', () => {
 
 test('error is capped so scores never go below zero', () => {
   const p = byId('milgram');
-  const r = S.scoreDrawing(p, { values: [40, 40, 40, 40, 40, 0] });
+  const r = S.scoreDrawing(p, { values: [40, 40, 40, 0] });
   assert.ok(r.score >= 0 && r.errorPct <= 100);
 });
 

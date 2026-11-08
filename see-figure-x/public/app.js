@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const S = window.GBScoring;
-  const { Chart, Pad, hexToRgba } = window.GBChart;
+  const { Chart, Pad, VAR_COLORS, UNLABELED, hexToRgba } = window.GBChart;
 
   const app = document.getElementById('app');
   const banner = document.getElementById('banner');
@@ -19,7 +19,7 @@
     trend: 'Draw the trend line through where you think the data falls.',
     distribution: 'Draw the shape of the distribution. Only the shape is judged, not how tall you draw it.',
     bar: 'Tap or drag in each column to set the bar height.',
-    interaction: 'Choose a line below, then tap each column to place its point.',
+    interaction: '',
   };
 
   // ---------- state ----------
@@ -304,7 +304,20 @@
 
   // ----- round: preview + draw -----
   function promptCard(p, big) {
-    return `<section class="prompt-card ${big ? 'big' : ''}"><h1>${figNo()}${esc(p.title)}</h1><p>${esc(p.prompt)}</p></section>`;
+    const vars =
+      big && p.type === 'interaction'
+        ? `<p class="var-row">Which line is which? ${varChips(p)}</p>`
+        : '';
+    return `<section class="prompt-card ${big ? 'big' : ''}"><h1>${figNo()}${esc(p.title)}</h1><p>${esc(p.prompt)}</p>${vars}</section>`;
+  }
+
+  const varChip = (p, k) => `<span class="var" style="--c:${VAR_COLORS[k]}">${esc(p.series[k].name)}</span>`;
+  const varChips = (p) => `${varChip(p, 0)} ${varChip(p, 1)}`;
+
+  // Empty axes, plus the unlabeled lines for an interaction chart.
+  function drawBase(chart, p) {
+    chart.drawAxes();
+    if (p.lines) chart.interaction(p.lines, { colors: [UNLABELED, UNLABELED], width: 4, markerSize: 7 });
   }
 
   function renderRound() {
@@ -349,34 +362,28 @@
       });
       if (state.you.draft) view.pad.load(state.you.draft);
       const lockBtn = document.getElementById('lock');
+      const btn = (id) => document.getElementById(id);
       const updateTools = () => {
         const empty = view.pad.isEmpty();
         lockBtn.disabled = empty || m.locked;
-        document.getElementById('undo').disabled = empty;
-        document.getElementById('clear').disabled = empty;
+        ['undo', 'clear', 'swap'].forEach((id) => btn(id) && (btn(id).disabled = empty));
       };
-      document.getElementById('undo').onclick = () => view.pad.undo();
-      document.getElementById('clear').onclick = () => view.pad.clear();
+      if (btn('undo')) btn('undo').onclick = () => view.pad.undo();
+      if (btn('clear')) btn('clear').onclick = () => view.pad.clear();
+      if (btn('swap')) btn('swap').onclick = () => view.pad.swap();
       lockBtn.onclick = () => {
         if (view.pad.isEmpty()) return;
         send({ type: 'lock', drawing: view.pad.drawing });
         if (navigator.vibrate) navigator.vibrate(30);
       };
-      app.querySelectorAll('[data-series]').forEach((b) => {
-        b.onclick = () => {
-          view.pad.activeSeries = Number(b.dataset.series);
-          app.querySelectorAll('[data-series]').forEach((x) => x.classList.toggle('on', x === b));
-          view.pad.render();
-        };
-      });
       updateTools();
       view.resize = () => view.pad.resize();
     } else {
       view.chart = new Chart(canvas, p);
-      view.chart.drawAxes();
+      drawBase(view.chart, p);
       view.resize = () => {
         view.chart.resize();
-        view.chart.drawAxes();
+        drawBase(view.chart, p);
       };
     }
 
@@ -415,19 +422,15 @@
   }
 
   function drawTools(p) {
-    const series =
-      p.type === 'interaction'
-        ? `<div class="series-pick">${p.series
-            .map(
-              (s, i) =>
-                `<button data-series="${i}" class="${i === 0 ? 'on' : ''}"><svg viewBox="0 0 40 12" aria-hidden="true"><line x1="2" y1="6" x2="38" y2="6" ${i ? 'stroke-dasharray="7 5"' : ''}/>${
-                  i ? '<rect x="16" y="2" width="8" height="8"/>' : '<circle cx="20" cy="6" r="4"/>'
-                }</svg>${esc(s.name)}</button>`
-            )
-            .join('')}</div>`
-        : '';
+    if (p.type === 'interaction') {
+      return `
+        <p class="label-task">Tap the line that shows ${varChip(p, 0)}<br>The other line becomes ${varChip(p, 1)}</p>
+        <div class="tools two">
+          <button id="swap">Swap</button>
+          <button id="lock" class="primary">Lock in</button>
+        </div>`;
+    }
     return `
-      ${series}
       <p class="hint">${esc(HINTS[p.type])}</p>
       <div class="tools">
         <button id="undo">Undo</button>
@@ -447,14 +450,10 @@
     const last = state.round.index + 1 >= state.round.total;
     const nextLabel = last ? 'See final results' : 'Next round';
 
-    const legendSeries =
-      p.type === 'interaction'
-        ? `<li class="legend-series"><svg viewBox="0 0 40 12" aria-hidden="true"><line x1="2" y1="6" x2="38" y2="6"/><circle cx="20" cy="6" r="4"/></svg>${esc(
-            p.series[0].name
-          )}</li><li class="legend-series"><svg viewBox="0 0 40 12" aria-hidden="true"><line x1="2" y1="6" x2="38" y2="6" stroke-dasharray="7 5"/><rect x="16" y="2" width="8" height="8"/></svg>${esc(
-            p.series[1].name
-          )}</li>`
-        : '';
+    const isLabeling = p.type === 'interaction';
+    const legendSeries = isLabeling
+      ? p.series.map((sr, k) => `<li><span class="swatch" style="--c:${VAR_COLORS[k]}"></span>${esc(sr.name)}</li>`).join('')
+      : '';
 
     const cards = `
       <div class="score-cards">
@@ -469,14 +468,16 @@
           <section class="prompt-card compact"><h1>${figNo()}${esc(p.title)}</h1><p>${esc(p.prompt)}</p></section>
           <div class="chart-wrap"><canvas id="chart"></canvas></div>
           <ul class="legend">
-            <li><span class="swatch truth"></span>Real data</li>
-            ${shown
-              .map((r) => {
-                const pl = playerById(r.playerId);
-                return pl ? `<li><span class="swatch" style="--c:${pl.color}"></span>${isDisplay ? esc(pl.name) : 'Your drawing'}</li>` : '';
-              })
-              .join('')}
-            ${legendSeries}
+            ${
+              isLabeling
+                ? legendSeries
+                : `<li><span class="swatch truth"></span>Real data</li>${shown
+                    .map((r) => {
+                      const pl = playerById(r.playerId);
+                      return pl ? `<li><span class="swatch" style="--c:${pl.color}"></span>${isDisplay ? esc(pl.name) : 'Your drawing'}</li>` : '';
+                    })
+                    .join('')}`
+            }
           </ul>
           ${isDisplay ? '' : cards}
           <section class="finding" data-finding>
@@ -547,13 +548,19 @@
     view.update = null;
   }
 
+  function errorLabel(r) {
+    if (r.empty) return state.round.prompt.type === 'interaction' ? 'No answer' : 'No drawing';
+    if (state.round.prompt.type === 'interaction') return r.score === 100 ? 'Matched! Error =' : 'Flipped. Error =';
+    return 'Error =';
+  }
+
   function scoreCard(r, isDisplay) {
     const pl = playerById(r.playerId);
     return `
       <div class="score-card ${isDisplay ? 'mini' : ''}" style="--c:${pl ? pl.color : '#888'}" data-error="${r.errorPct}" data-score="${r.score}" data-empty="${r.empty ? 1 : 0}" data-total="${pl ? pl.total : 0}">
         <div class="sc-name"><span class="dot"></span>${esc(pl ? pl.name : 'Player')}</div>
         <div class="sc-big" data-big>100</div>
-        <div class="sc-error" data-err>${r.empty ? 'No drawing' : 'Error ='} <span class="neg">−${r.errorPct}</span></div>
+        <div class="sc-error" data-err>${errorLabel(r)} <span class="neg">−${r.errorPct}</span></div>
         <div class="sc-total" data-tot>Round score ${r.score} · Total ${pl ? pl.total : 0}</div>
       </div>`;
   }

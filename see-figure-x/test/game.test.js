@@ -29,13 +29,19 @@ function client(port) {
   return c;
 }
 
+// For an interaction prompt, the labeling that matches the lines shown (`lines`), or its opposite.
+function labelingFor(prompt, lines, right) {
+  const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+  const assign = prompt.series.map((s) => lines.findIndex((l) => same(l, s.values)));
+  return { assign: right ? assign : assign.slice().reverse() };
+}
+
 function answerFor(prompt, quality) {
   // quality 1 = exact, lower = shifted up by (1 − quality) of the chart height.
   // Shift up, not down: several answers sit at the axis floor, where a downward
   // shift would be clamped and score better than expected.
   const shift = (prompt.type === 'distribution' ? 0 : (prompt.y.max - prompt.y.min)) * (1 - quality);
   if (prompt.type === 'bar') return { values: prompt.values.map((v) => v + shift) };
-  if (prompt.type === 'interaction') return { series: prompt.series.map((s) => s.values.map((v) => v + shift)) };
   return { strokes: [[[prompt.x.min, 0.5], [prompt.x.max, 0.5]]] };
 }
 
@@ -87,7 +93,7 @@ test('full game: create, join, draw, lock, reveal, final, play again', async (t)
   // The answer must not leak before the reveal.
   const pub = players[0].state.round.prompt;
   assert.ok(!pub.points && !pub.values && !pub.dist, 'no answer data in preview');
-  if (pub.series) assert.ok(!pub.series[0].values);
+  if (pub.series) assert.ok(!pub.series[0].values, 'interaction labels hidden');
 
   const seen = new Set();
   for (let round = 0; round < 5; round++) {
@@ -96,24 +102,32 @@ test('full game: create, join, draw, lock, reveal, final, play again', async (t)
     await host.until((c) => c.state.phase === 'draw');
     const full = PROMPTS.find((p) => p.id === host.state.round.prompt.id);
     seen.add(full.type);
+    const labeling = full.type === 'interaction';
+    const lines = players[0].state.round.prompt.lines;
+    if (labeling) assert.strictEqual(lines.length, 2, 'unlabeled lines are sent to players');
 
-    // Player 0 draws perfectly, player 1 slightly off, player 2 only saves a draft (never locks).
-    players[2].send({ type: 'draft', drawing: answerFor(full, 0.8) });
-    players[0].send({ type: 'lock', drawing: answerFor(full, 1) });
-    players[1].send({ type: 'lock', drawing: answerFor(full, 0.9) });
+    // Player 0 answers perfectly, player 1 slightly off (or flipped), player 2 only saves a draft (never locks).
+    const answer = (q) => (labeling ? labelingFor(full, lines, q === 1) : answerFor(full, q));
+    players[2].send({ type: 'draft', drawing: answer(0.8) });
+    players[0].send({ type: 'lock', drawing: answer(1) });
+    players[1].send({ type: 'lock', drawing: answer(0.9) });
     await host.until((c) => c.state.players.filter((p) => p.locked).length === 2);
     assert.strictEqual(host.state.phase, 'draw', 'still waiting on player 2');
-    players[2].send({ type: 'lock', drawing: answerFor(full, 0.1) }); // ignored? no — first lock counts
+    players[2].send({ type: 'lock', drawing: answer(0.1) });
     await host.until((c) => c.state.phase === 'reveal');
 
     const results = host.state.round.results;
     assert.strictEqual(results.length, 3);
     for (const r of results) assert.strictEqual(r.score, 100 - r.errorPct);
     assert.ok(host.state.round.prompt.source, 'citation sent at reveal');
-    if (full.type === 'bar' || full.type === 'interaction') {
-      const [a, b] = results;
+    const [a, b] = results;
+    if (full.type === 'bar') {
       assert.strictEqual(a.score, 100);
       assert.strictEqual(b.score, 90);
+    }
+    if (labeling) {
+      assert.strictEqual(a.score, 100, 'right labeling');
+      assert.strictEqual(b.score, 0, 'flipped labeling');
     }
     players[1].send({ type: 'next' }); // not host: ignored
     host.send({ type: 'next' });

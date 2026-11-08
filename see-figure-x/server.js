@@ -216,9 +216,14 @@ function attach(ws, room, member, role) {
 }
 
 // ---------- state sent to clients ----------
-function publicPrompt(p) {
+// The prompt without its answer. Interaction prompts keep their lines (shuffled,
+// unlabeled) because the task is to label them.
+function publicPrompt(p, order) {
   const { points, dist, values, series, ...rest } = p;
-  if (series) rest.series = series.map((s) => ({ name: s.name }));
+  if (series) {
+    rest.series = series.map((s) => ({ name: s.name }));
+    rest.lines = scoring.interactionLines(p, order);
+  }
   return rest;
 }
 
@@ -251,7 +256,7 @@ function stateFor(room, viewerId) {
     state.round = {
       index: room.roundIndex,
       total: room.prompts.length,
-      prompt: room.phase === 'reveal' ? prompt : publicPrompt(prompt),
+      prompt: room.phase === 'reveal' ? prompt : publicPrompt(prompt, room.round.order),
     };
     if (room.phase === 'draw' && role === 'player') {
       state.you.draft = room.round.drafts.get(viewerId) || null;
@@ -309,7 +314,7 @@ function nextRound(room) {
     room.round = null;
     return setPhase(room, 'final');
   }
-  room.round = { drafts: new Map(), locked: new Set(), results: [] };
+  room.round = { drafts: new Map(), locked: new Set(), results: [], order: scoring.randomOrder(() => crypto.randomInt(2)) };
   setPhase(room, 'preview', PREVIEW_MS, () => startDraw(room));
 }
 
@@ -326,7 +331,7 @@ function reveal(room) {
   const prompt = room.prompts[room.roundIndex];
   room.round.results = [...room.players.values()].map((p) => {
     const drawing = room.round.drafts.get(p.id) || null;
-    const r = scoring.scoreDrawing(prompt, drawing);
+    const r = scoring.scoreDrawing(prompt, drawing, room.round.order);
     p.total += r.score;
     p.totalError += r.errorPct;
     return { playerId: p.id, drawing, ...r };

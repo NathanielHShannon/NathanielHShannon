@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const S = window.GBScoring;
-  const { Chart, Pad } = window.GBChart;
+  const { Chart, Pad, VAR_COLORS } = window.GBChart;
   const { animateScoreCard, animateTruth } = window.GBUI;
 
   const COLOR = '#4dabf7';
@@ -20,7 +20,7 @@
     trend: 'Draw the trend line through where you think the data falls.',
     distribution: 'Draw the shape of the distribution. Only the shape is judged, not how tall you draw it.',
     bar: 'Tap or drag in each column to set the bar height.',
-    interaction: 'Choose a line below, then tap each column to place its point.',
+    interaction: '',
   };
 
   const $ = (id) => document.getElementById(id);
@@ -29,6 +29,7 @@
 
   let prompts = [];
   let current = null; // the prompt being shown
+  let order = [0, 1]; // interaction: which series each displayed line is
   let pad = null;
   let revealed = false;
   let cancelAnim = null;
@@ -116,34 +117,27 @@
     $('meta').innerHTML = `${list.findIndex((x) => x.id === p.id) + 1} of ${list.length} · id <code>${esc(p.id)}</code> · type <code>${esc(p.type)}</code>`;
     $('prompt').innerHTML = `<h1>${esc(p.title)}</h1><p>${esc(p.prompt)}</p>`;
     $('hint').textContent = HINTS[p.type];
+    const labeling = p.type === 'interaction';
+    $('hint').hidden = labeling;
+    $('undo').hidden = labeling;
+    $('clear').hidden = labeling;
+    $('swap').hidden = !labeling;
+    $('tools').classList.toggle('two', labeling);
 
-    // The pad gets the answer-free version, like players do.
+    // The pad gets the answer-free version, like players do: interaction lines
+    // are shuffled and unlabeled.
+    order = S.randomOrder();
     const { points, dist, values, series, ...pub } = p;
-    if (series) pub.series = series.map((s) => ({ name: s.name }));
+    if (series) {
+      pub.series = series.map((s) => ({ name: s.name }));
+      pub.lines = S.interactionLines(p, order);
+    }
     pad = new Pad($('chart'), pub, COLOR, updateTools);
 
-    $('series').innerHTML =
-      p.type === 'interaction'
-        ? `<div class="series-pick">${p.series
-            .map(
-              (s, i) =>
-                `<button data-series="${i}" class="${i === 0 ? 'on' : ''}"><svg viewBox="0 0 40 12" aria-hidden="true"><line x1="2" y1="6" x2="38" y2="6" ${
-                  i ? 'stroke-dasharray="7 5"' : ''
-                }/>${i ? '<rect x="16" y="2" width="8" height="8"/>' : '<circle cx="20" cy="6" r="4"/>'}</svg>${esc(s.name)}</button>`
-            )
-            .join('')}</div>`
-        : '';
-    $('series')
-      .querySelectorAll('[data-series]')
-      .forEach((b) => {
-        b.onclick = () => {
-          pad.activeSeries = Number(b.dataset.series);
-          $('series')
-            .querySelectorAll('[data-series]')
-            .forEach((x) => x.classList.toggle('on', x === b));
-          pad.render();
-        };
-      });
+    const chip = (k) => `<span class="var" style="--c:${VAR_COLORS[k]}">${esc(p.series[k].name)}</span>`;
+    $('series').innerHTML = labeling
+      ? `<p class="label-task">Tap the line that shows ${chip(0)}<br>The other line becomes ${chip(1)}</p>`
+      : '';
     updateTools();
   }
 
@@ -151,6 +145,7 @@
     const empty = pad.isEmpty();
     $('undo').disabled = empty;
     $('clear').disabled = empty;
+    $('swap').disabled = empty;
     $('reveal').textContent = empty ? 'Show answer' : 'Reveal';
   }
 
@@ -164,23 +159,27 @@
     pad.enabled = false;
     const p = current;
     const drawing = pad.isEmpty() ? null : S.sanitizeDrawing(p, pad.drawing);
-    const r = S.scoreDrawing(p, drawing);
+    const r = S.scoreDrawing(p, drawing, order);
+    const labeling = p.type === 'interaction';
+    const errorText = !drawing
+      ? labeling
+        ? 'No answer'
+        : 'No drawing'
+      : labeling
+        ? r.score === 100
+          ? 'Matched! Error ='
+          : 'Flipped. Error ='
+        : 'Error =';
 
     $('tools').hidden = true;
     $('hint').hidden = true;
     $('series').hidden = true;
     $('result').hidden = false;
-    $('legend-series').innerHTML =
-      p.type === 'interaction'
-        ? p.series
-            .map(
-              (s, i) =>
-                `<li class="legend-series"><svg viewBox="0 0 40 12" aria-hidden="true"><line x1="2" y1="6" x2="38" y2="6" ${
-                  i ? 'stroke-dasharray="7 5"' : ''
-                }/>${i ? '<rect x="16" y="2" width="8" height="8"/>' : '<circle cx="20" cy="6" r="4"/>'}</svg>${esc(s.name)}</li>`
-            )
-            .join('')
-        : '';
+    $('legend-truth').hidden = labeling;
+    $('legend-you').hidden = labeling || !drawing;
+    $('legend-series').innerHTML = labeling
+      ? p.series.map((sr, k) => `<li><span class="swatch" style="--c:${VAR_COLORS[k]}"></span>${esc(sr.name)}</li>`).join('')
+      : '';
     $('finding').innerHTML = `
       <p class="takeaway">${esc(p.takeaway)}</p>
       <p class="source">${esc(p.source)}</p>
@@ -189,7 +188,7 @@
       <div class="score-card" style="--c:${COLOR}" data-error="${r.errorPct}" data-score="${r.score}">
         <div class="sc-name"><span class="dot"></span>${drawing ? 'Your score' : 'Answer only'}</div>
         <div class="sc-big" data-big>100</div>
-        <div class="sc-error">${drawing ? 'Error =' : 'No drawing'} <span class="neg">−${r.errorPct}</span></div>
+        <div class="sc-error">${errorText} <span class="neg">−${r.errorPct}</span></div>
         <div class="sc-total">Round score ${r.score}</div>
       </div>`;
 
@@ -226,6 +225,7 @@
   };
   $('undo').onclick = () => pad.undo();
   $('clear').onclick = () => pad.clear();
+  $('swap').onclick = () => pad.swap();
   $('reveal').onclick = reveal;
   $('again').onclick = () => show(current);
   $('reload').onclick = load;

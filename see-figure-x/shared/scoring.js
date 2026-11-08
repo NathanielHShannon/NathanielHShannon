@@ -5,9 +5,13 @@
  *
  * Score for a round = 100 − error, where
  *   error = round(100 × RMSE / scale), clamped to 0–100
- *   scale = height of the chart's y-axis (line, trend, bar, interaction)
+ *   scale = height of the chart's y-axis (line, trend, bar)
  *         = peak height of the true curve (distribution; both curves are first
  *           rescaled to the same area, so only the shape is judged)
+ *
+ * Interaction charts are a labeling task: both real lines are shown unlabeled
+ * (in a shuffled order) and the player says which line is which variable.
+ * Right = error 0 (score 100); wrong = error 100 (score 0).
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -21,6 +25,7 @@
 
   // Limits for sanitizing drawings sent by clients.
   const MAX_STROKES = 60;
+  const MAX_BARS = 4;
   const MAX_POINTS = 6000;
 
   function linspace(a, b, n) {
@@ -200,16 +205,32 @@
   }
 
   function truthValues(prompt) {
-    if (prompt.type === 'bar') return prompt.values.slice();
-    return [].concat(...prompt.series.map((s) => s.values));
+    return prompt.values.slice();
   }
 
-  // Bars or interaction points the player left unset count as the axis floor.
+  // Bars the player left unset count as the axis floor.
   function playerValues(prompt, drawing) {
-    if (!drawing) return null;
-    const raw = prompt.type === 'bar' ? drawing.values : drawing.series && [].concat(...drawing.series);
-    if (!raw || raw.every((v) => v === null || v === undefined)) return null;
+    if (!drawing || !drawing.values) return null;
+    const raw = drawing.values;
+    if (raw.every((v) => v === null || v === undefined)) return null;
     return raw.map((v) => (v === null || v === undefined ? prompt.y.min : v));
+  }
+
+  // ----- interaction (labeling) -----
+  // `order` lists, for each line as displayed, which series it really is.
+  // e.g. order [1, 0] means the first line shown is series 1.
+  function randomOrder(rand = Math.random) {
+    return rand() < 0.5 ? [0, 1] : [1, 0];
+  }
+
+  // The unlabeled lines players see, in display order.
+  function interactionLines(prompt, order) {
+    return order.map((si) => prompt.series[si].values.slice());
+  }
+
+  // drawing.assign[k] = which displayed line the player labeled as series k.
+  function isCorrectLabeling(drawing, order) {
+    return !!drawing && Array.isArray(drawing.assign) && order[drawing.assign[0]] === 0 && order[drawing.assign[1]] === 1;
   }
 
   function rmse(a, b) {
@@ -217,7 +238,13 @@
   }
 
   // Score one drawing. Returns { errorPct, score, empty }.
-  function scoreDrawing(prompt, drawing) {
+  // `order` is only used for interaction prompts (see interactionLines).
+  function scoreDrawing(prompt, drawing, order = [0, 1]) {
+    if (prompt.type === 'interaction') {
+      if (!drawing || !Array.isArray(drawing.assign)) return { errorPct: 100, score: 0, empty: true };
+      const right = isCorrectLabeling(drawing, order);
+      return { errorPct: right ? 0 : 100, score: right ? 100 : 0, empty: false };
+    }
     let truth, player, scale;
     if (isFreehand(prompt)) {
       const t = truthCurve(prompt);
@@ -262,12 +289,17 @@
       return { strokes };
     }
 
-    const cleanList = (list, n) =>
-      Array.from({ length: n }, (_, i) => (Array.isArray(list) && num(list[i]) ? cy(list[i]) : null));
-    if (prompt.type === 'bar') return { values: cleanList(d.values, prompt.categories.length) };
-    if (!Array.isArray(d.series)) return null;
+    if (prompt.type === 'interaction') {
+      const a = d.assign;
+      if (!Array.isArray(a) || a.length !== 2) return null;
+      if ((a[0] === 0 && a[1] === 1) || (a[0] === 1 && a[1] === 0)) return { assign: [a[0], a[1]] };
+      return null;
+    }
+    const list = d.values;
     return {
-      series: prompt.series.map((_, si) => cleanList(d.series[si], prompt.categories.length)),
+      values: Array.from({ length: prompt.categories.length }, (_, i) =>
+        Array.isArray(list) && num(list[i]) ? cy(list[i]) : null
+      ),
     };
   }
 
@@ -298,12 +330,14 @@
     if (p.type === 'bar') {
       if (!Array.isArray(p.categories) || p.categories.length !== (p.values || []).length)
         fail('categories and values must have the same length');
+      if (p.categories.length > MAX_BARS) fail(`has ${p.categories.length} bars; the limit is ${MAX_BARS}`);
     }
     if (p.type === 'interaction') {
       if (!Array.isArray(p.series) || p.series.length !== 2) fail('needs exactly 2 series');
       p.series.forEach((s) => {
         if (s.values.length !== p.categories.length) fail(`series "${s.name}" has wrong length`);
       });
+      if (p.categories.length > MAX_BARS) fail(`has ${p.categories.length} columns; the limit is ${MAX_BARS}`);
     }
     return true;
   }
@@ -311,6 +345,10 @@
   return {
     SAMPLES,
     TYPES,
+    MAX_BARS,
+    randomOrder,
+    interactionLines,
+    isCorrectLabeling,
     isFreehand,
     density,
     interpPoints,

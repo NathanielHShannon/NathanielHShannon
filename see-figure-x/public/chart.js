@@ -15,7 +15,9 @@
     fontSmall: '500 11px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
     fontTitle: '700 13px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   };
-  const SERIES_DASH = [[], [9, 6]];
+  // Interaction charts: each variable has its own color; unlabeled lines are grey.
+  const VAR_COLORS = ['#ff922b', '#b197fc'];
+  const UNLABELED = '#8ea0c2';
 
   function niceStep(range, target) {
     const raw = range / target;
@@ -315,35 +317,76 @@
       });
     }
 
-    // Two-series interaction plot. seriesValues: [[...],[...]]
-    interaction(seriesValues, { color, colors, width = 3, progress = 1, glow = false, markerSize = 6 }) {
+    // Interaction lines across the categories. colors[i] colors line i;
+    // labels[i] (optional) is written next to the line's right end.
+    interaction(lines, { colors, labels, width = 3.5, progress = 1, glow = false, markerSize = 6 }) {
       const { ctx } = this;
-      seriesValues.forEach((vals, si) => {
-        const c = colors ? colors[si] : color;
+      const pts = lines.map((vals) =>
+        vals.map((v, i) => [this.catCenter(i), this.yToPx(this.yr.min + (v - this.yr.min) * progress)])
+      );
+      pts.forEach((line, li) => {
+        const c = colors[li];
         ctx.save();
         ctx.strokeStyle = c;
         ctx.fillStyle = c;
         ctx.lineWidth = width;
-        ctx.setLineDash(SERIES_DASH[si]);
+        ctx.lineCap = 'round';
         if (glow) {
           ctx.shadowColor = c;
           ctx.shadowBlur = 12;
         }
-        const pts = vals
-          .map((v, i) => (v === null || v === undefined ? null : [this.catCenter(i), this.yToPx(this.yr.min + (v - this.yr.min) * progress)]))
-          .filter(Boolean);
         ctx.beginPath();
-        pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        line.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
         ctx.stroke();
-        ctx.setLineDash([]);
-        for (const [x, y] of pts) {
+        for (const [x, y] of line) {
           ctx.beginPath();
-          if (si === 0) ctx.arc(x, y, markerSize, 0, Math.PI * 2);
-          else ctx.rect(x - markerSize, y - markerSize, markerSize * 2, markerSize * 2);
+          ctx.arc(x, y, markerSize, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
       });
+      if (!labels || progress < 1) return;
+      // Name each line at its right end: the higher end gets its label above, the lower one below.
+      const ends = pts.map((line) => line[line.length - 1]);
+      ctx.save();
+      ctx.font = THEME.fontTitle;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ends.forEach(([x, y], li) => {
+        if (!labels[li]) return;
+        const other = ends[1 - li][1];
+        const above = y < other || (y === other && li === 0);
+        const ty = Math.min(this.plot.b - 10, Math.max(this.plot.t + 10, y + (above ? -1 : 1) * (markerSize + 12)));
+        const w = ctx.measureText(labels[li]).width;
+        const tx = Math.max(this.plot.l + 4, Math.min(this.plot.r - w - 4, x - w / 2));
+        ctx.fillStyle = 'rgba(13, 21, 38, 0.85)';
+        ctx.fillRect(tx - 4, ty - 10, w + 8, 20);
+        ctx.fillStyle = colors[li];
+        ctx.fillText(labels[li], tx, ty);
+      });
+      ctx.restore();
+    }
+
+    // Which of the given lines is nearest the tap (in pixels), or -1 if none is close.
+    lineAt(px, py, lines, maxDist = 70) {
+      let best = -1;
+      let bestD = Infinity;
+      lines.forEach((vals, li) => {
+        const pts = vals.map((v, i) => [this.catCenter(i), this.yToPx(v)]);
+        for (let i = 0; i + 1 < pts.length; i++) {
+          const [ax, ay] = pts[i];
+          const [bx, by] = pts[i + 1];
+          const dx = bx - ax;
+          const dy = by - ay;
+          const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
+          const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+          if (d < bestD) {
+            bestD = d;
+            best = li;
+          }
+        }
+      });
+      return bestD <= maxDist ? best : -1;
     }
 
     // Draws a player's drawing in the form used on the reveal (scored curve).
@@ -361,9 +404,8 @@
         }
       } else if (p.type === 'bar') {
         this.bars(drawing.values, { color, mode: opts.barMode || 'tick', slot: opts.slot || 0, slots: opts.slots || 1, alpha: 0.85 });
-      } else {
-        this.interaction(drawing.series, { color, width: opts.width || 2.5, markerSize: 5 });
       }
+      // Interaction answers are labels, not marks; the score card shows right or wrong.
     }
 
     // The real data, animated by progress (0–1).
@@ -382,7 +424,7 @@
       } else {
         this.interaction(
           p.series.map((s) => s.values),
-          { color: THEME.truth, width: 4, progress, glow: true, markerSize: 7 }
+          { colors: VAR_COLORS, labels: p.series.map((s) => s.name), width: 4.5, progress, glow: true, markerSize: 7 }
         );
       }
     }
@@ -395,7 +437,6 @@
       this.prompt = prompt;
       this.color = color;
       this.onChange = onChange;
-      this.activeSeries = 0;
       this.enabled = true;
       this.drawing = Pad.empty(prompt);
       this.current = null;
@@ -407,7 +448,7 @@
       if (S.isFreehand(prompt)) return { strokes: [] };
       const blank = () => prompt.categories.map(() => null);
       if (prompt.type === 'bar') return { values: blank() };
-      return { series: [blank(), blank()] };
+      return { assign: null }; // interaction: assign[k] = displayed line labeled as series k
     }
 
     load(drawing) {
@@ -418,8 +459,16 @@
     isEmpty() {
       const d = this.drawing;
       if (d.strokes) return d.strokes.length === 0;
-      const vals = d.values || [].concat(...d.series);
-      return vals.every((v) => v === null);
+      if (this.prompt.type === 'interaction') return !d.assign;
+      return d.values.every((v) => v === null);
+    }
+
+    // Interaction: flip which line is which.
+    swap() {
+      if (!this.drawing.assign) return;
+      this.drawing.assign = this.drawing.assign.slice().reverse();
+      this.render();
+      this.onChange(true);
     }
 
     clear() {
@@ -431,6 +480,7 @@
     undo() {
       const d = this.drawing;
       if (d.strokes) d.strokes.pop();
+      else if (this.prompt.type === 'interaction') d.assign = null;
       else if (this.lastEdit) {
         const { list, i, prev } = this.lastEdit;
         list[i] = prev;
@@ -484,6 +534,12 @@
         this.drawing.strokes.push(this.current);
         this.lastPx = [px, py];
         this.render();
+      } else if (this.prompt.type === 'interaction') {
+        // Tapping a line labels it as the first variable; the other line gets the second.
+        const li = this.chart.lineAt(px, py, this.prompt.lines);
+        if (li < 0) return;
+        this.drawing.assign = [li, 1 - li];
+        this.render();
       } else {
         this.setColumn(px, py, true);
       }
@@ -496,7 +552,7 @@
         if (Math.hypot(px - lx, py - ly) < 2) return;
         this.lastPx = [px, py];
         this.current.push(this.dataPoint(px, py));
-      } else {
+      } else if (this.prompt.type === 'bar') {
         this.setColumn(px, py, false);
       }
     }
@@ -505,7 +561,7 @@
       const ch = this.chart;
       const i = ch.catAt(px);
       const y = Math.max(ch.yr.min, Math.min(ch.yr.max, ch.pxToY(py)));
-      const list = this.prompt.type === 'bar' ? this.drawing.values : this.drawing.series[this.activeSeries];
+      const list = this.drawing.values;
       if (isStart || !this.lastEdit || this.lastEdit.i !== i || this.lastEdit.list !== list) {
         this.lastEdit = { list, i, prev: list[i] };
       }
@@ -520,9 +576,16 @@
       if (S.isFreehand(p)) ch.strokes(this.drawing.strokes, this.color, 4);
       else if (p.type === 'bar') ch.bars(this.drawing.values, { color: this.color, mode: 'fill', alpha: 0.9, showEmpty: true });
       else {
-        // Inactive series is drawn dimmer.
-        const colors = [0, 1].map((si) => (si === this.activeSeries ? this.color : hexToRgba(this.color, 0.4)));
-        ch.interaction(this.drawing.series, { colors, width: 3.5, markerSize: 7 });
+        const a = this.drawing.assign;
+        const colors = [UNLABELED, UNLABELED];
+        const labels = ['', ''];
+        if (a) {
+          a.forEach((li, k) => {
+            colors[li] = VAR_COLORS[k];
+            labels[li] = p.series[k].name;
+          });
+        }
+        ch.interaction(p.lines, { colors, labels, width: 4, markerSize: 7 });
       }
     }
 
@@ -532,5 +595,5 @@
     }
   }
 
-  window.GBChart = { Chart, Pad, THEME, SERIES_DASH, hexToRgba };
+  window.GBChart = { Chart, Pad, THEME, VAR_COLORS, UNLABELED, hexToRgba };
 })();
