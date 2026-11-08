@@ -219,7 +219,7 @@ function attach(ws, room, member, role) {
 // The prompt without its answer. Interaction prompts keep their lines (shuffled,
 // unlabeled) because the task is to label them.
 function publicPrompt(p, order) {
-  const { points, dist, values, series, ...rest } = p;
+  const { points, dist, values, value, series, ...rest } = p;
   if (series) {
     rest.series = series.map((s) => ({ name: s.name }));
     rest.lines = scoring.interactionLines(p, order);

@@ -13,6 +13,7 @@
     distribution: 'Distribution',
     bar: 'Bar chart',
     interaction: 'Interaction',
+    percent: 'Guess the percent',
   };
   const HINTS = {
     line: 'Draw the line from left to right. Lift your finger and redraw any part — overlapping parts are averaged.',
@@ -20,6 +21,7 @@
     distribution: 'Draw the shape of the distribution. Only the shape is judged, not how tall you draw it.',
     bar: 'Tap or drag in each column to set the bar height.',
     interaction: '',
+    percent: 'Drag around the ring to set your guess.',
   };
 
   // ---------- state ----------
@@ -330,7 +332,7 @@
       <main class="round ${isDisplay ? 'wide' : ''}">
         ${promptCard(p, isDisplay)}
         <div class="chart-wrap ${drawing ? 'pad' : ''}">
-          <canvas id="chart" aria-label="Chart: ${esc(p.yLabel)} by ${esc(p.xLabel)}"></canvas>
+          <canvas id="chart" aria-label="${esc(p.xLabel ? `Chart: ${p.yLabel} by ${p.xLabel}` : p.yLabel)}"></canvas>
           <div class="overlay" data-overlay hidden></div>
         </div>
         ${drawing ? drawTools(p) : ''}
@@ -474,7 +476,7 @@
                 : `<li><span class="swatch truth"></span>Real data</li>${shown
                     .map((r) => {
                       const pl = playerById(r.playerId);
-                      return pl ? `<li><span class="swatch" style="--c:${pl.color}"></span>${isDisplay ? esc(pl.name) : 'Your drawing'}</li>` : '';
+                      return pl ? `<li><span class="swatch" style="--c:${pl.color}"></span>${isDisplay ? esc(pl.name) : p.type === 'percent' ? 'Your guess' : 'Your drawing'}</li>` : '';
                     })
                     .join('')}`
             }

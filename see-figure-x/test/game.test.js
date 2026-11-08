@@ -37,11 +37,17 @@ function labelingFor(prompt, lines, right) {
 }
 
 function answerFor(prompt, quality) {
+  // Percent: guess (1 − quality) × 100 points too low (every answer is at least 25%).
+  if (prompt.type === 'percent') return { value: prompt.value - 100 * (1 - quality) };
   // quality 1 = exact, lower = shifted up by (1 − quality) of the chart height.
   // Shift up, not down: several answers sit at the axis floor, where a downward
   // shift would be clamped and score better than expected.
   const shift = (prompt.type === 'distribution' ? 0 : (prompt.y.max - prompt.y.min)) * (1 - quality);
-  if (prompt.type === 'bar') return { values: prompt.values.map((v) => v + shift) };
+  if (prompt.type === 'bar') {
+    // Shift up, or down if that would pass the top of the axis (clamped answers score better than expected).
+    const dir = prompt.values.every((v) => v + shift <= prompt.y.max) ? 1 : -1;
+    return { values: prompt.values.map((v) => v + dir * shift) };
+  }
   return { strokes: [[[prompt.x.min, 0.5], [prompt.x.max, 0.5]]] };
 }
 
@@ -92,7 +98,7 @@ test('full game: create, join, draw, lock, reveal, final, play again', async (t)
 
   // The answer must not leak before the reveal.
   const pub = players[0].state.round.prompt;
-  assert.ok(!pub.points && !pub.values && !pub.dist, 'no answer data in preview');
+  assert.ok(!pub.points && !pub.values && !pub.dist && pub.value === undefined, 'no answer data in preview');
   if (pub.series) assert.ok(!pub.series[0].values, 'interaction labels hidden');
 
   const seen = new Set();
@@ -121,7 +127,7 @@ test('full game: create, join, draw, lock, reveal, final, play again', async (t)
     for (const r of results) assert.strictEqual(r.score, 100 - r.errorPct);
     assert.ok(host.state.round.prompt.source, 'citation sent at reveal');
     const [a, b] = results;
-    if (full.type === 'bar') {
+    if (full.type === 'bar' || full.type === 'percent') {
       assert.strictEqual(a.score, 100);
       assert.strictEqual(b.score, 90);
     }

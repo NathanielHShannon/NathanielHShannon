@@ -34,6 +34,7 @@ test('a perfect drawing scores 100 for every prompt', () => {
     let d;
     if (S.isFreehand(p)) d = perfectStroke(p);
     else if (p.type === 'bar') d = { values: p.values.slice() };
+    else if (p.type === 'percent') d = { value: p.value };
     else d = { assign: [0, 1] };
     const r = S.scoreDrawing(p, S.sanitizeDrawing(p, d));
     assert.strictEqual(r.score, 100, `${p.id}: ${JSON.stringify(r)}`);
@@ -80,6 +81,16 @@ test('interaction is a labeling task: right is 100, flipped is 0', () => {
   assert.deepStrictEqual(S.sanitizeDrawing(p, { assign: [1, 0] }), { assign: [1, 0] });
   assert.strictEqual(S.sanitizeDrawing(p, { assign: [0, 0] }), null);
   assert.strictEqual(S.sanitizeDrawing(p, { series: [[1, 2], [3, 4]] }), null);
+});
+
+test('guess the percent: error is the gap in percentage points', () => {
+  const p = byId('asch-percent'); // answer 75
+  assert.deepStrictEqual(S.scoreDrawing(p, { value: 45 }), { errorPct: 30, score: 70, empty: false });
+  assert.deepStrictEqual(S.scoreDrawing(p, { value: 100 }), { errorPct: 25, score: 75, empty: false });
+  assert.strictEqual(S.scoreDrawing(p, { value: null }).empty, true);
+  assert.deepStrictEqual(S.sanitizeDrawing(p, { value: -20 }), { value: 0 });
+  assert.strictEqual(S.sanitizeDrawing(p, { value: 'lots' }), null);
+  assert.throws(() => S.validatePrompt({ ...p, value: 120 }), /between 0 and 100/);
 });
 
 test('bar and interaction charts are limited to 4 columns', () => {

@@ -79,7 +79,8 @@
       this.prompt = prompt;
       this.ctx = canvas.getContext('2d');
       this.categorical = prompt.type === 'bar' || prompt.type === 'interaction';
-      this.yr = prompt.type === 'distribution' ? { min: 0, max: 1 } : prompt.y;
+      this.isDial = prompt.type === 'percent';
+      this.yr = prompt.type === 'distribution' ? { min: 0, max: 1 } : this.isDial ? { min: 0, max: 100 } : prompt.y;
       this.resize();
     }
 
@@ -96,6 +97,12 @@
       const bottom = this.categorical ? (compact ? 62 : 66) : compact ? 50 : 54;
       this.plot = { l: left, t: 14, r: this.w - 14, b: this.h - bottom };
       this.plot.w = this.plot.r - this.plot.l;
+      // "Guess the percent" dial geometry: a ring centered above a caption.
+      this.dial = {
+        cx: this.w / 2,
+        cy: (this.h - 44) / 2 + 6,
+        r: Math.max(40, Math.min(this.w, this.h - 44) / 2 - 34),
+      };
       this.plot.h = this.plot.b - this.plot.t;
     }
 
@@ -127,6 +134,7 @@
 
     // ----- base -----
     drawAxes() {
+      if (this.isDial) return this.drawDial();
       const { ctx, plot, prompt } = this;
       ctx.clearRect(0, 0, this.w, this.h);
       ctx.fillStyle = THEME.bg;
@@ -389,10 +397,127 @@
       return bestD <= maxDist ? best : -1;
     }
 
+    // ----- "Guess the percent" dial -----
+    dialAngle(v) {
+      return -Math.PI / 2 + (v / 100) * Math.PI * 2;
+    }
+
+    // The value (0–100) at a point, measured clockwise from 12 o'clock.
+    dialValueAt(px, py) {
+      const { cx, cy } = this.dial;
+      let a = Math.atan2(py - cy, px - cx) + Math.PI / 2;
+      if (a < 0) a += Math.PI * 2;
+      return (a / (Math.PI * 2)) * 100;
+    }
+
+    drawDial() {
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      ctx.clearRect(0, 0, this.w, this.h);
+      ctx.fillStyle = THEME.bg;
+      ctx.fillRect(0, 0, this.w, this.h);
+      // track
+      ctx.strokeStyle = 'rgba(140, 170, 220, 0.14)';
+      ctx.lineWidth = 26;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+      // ticks every 5%, labels every 25%
+      ctx.strokeStyle = THEME.axis;
+      ctx.fillStyle = THEME.text;
+      ctx.font = THEME.fontSmall;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let v = 0; v < 100; v += 5) {
+        const a = this.dialAngle(v);
+        const major = v % 25 === 0;
+        const r0 = r + 15;
+        const r1 = r + (major ? 23 : 19);
+        ctx.lineWidth = major ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+        ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+        ctx.stroke();
+        // Push side labels out a little further so wide text clears the tick marks.
+        const lr = r + 32 + Math.abs(Math.cos(a)) * 12;
+        if (major) ctx.fillText(v + '%', cx + Math.cos(a) * lr, cy + Math.sin(a) * lr);
+      }
+      // caption under the dial
+      ctx.font = THEME.fontTitle;
+      ctx.fillStyle = THEME.text;
+      ctx.textBaseline = 'bottom';
+      const lines = wrap(ctx, this.prompt.yLabel, this.w - 24);
+      lines.forEach((ln, i) => ctx.fillText(ln, cx, this.h - 6 - (lines.length - 1 - i) * 16));
+    }
+
+    dialArc(v, { color, width = 26, radius, glow = false }) {
+      if (v <= 0) return;
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = v >= 100 ? 'butt' : 'round';
+      if (glow) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 16;
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius || r, this.dialAngle(0), this.dialAngle(Math.min(100, v)));
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // A player's guess as a pointer just inside the ring, so the answer arc never covers it.
+    dialMarker(v, color) {
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      const a = this.dialAngle(v);
+      const c = Math.cos(a);
+      const sn = Math.sin(a);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx + c * (r - 16), cy + sn * (r - 16));
+      ctx.lineTo(cx + c * (r - 34), cy + sn * (r - 34));
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx + c * (r - 40), cy + sn * (r - 40), 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    dialCenter(main, sub, color = THEME.truth) {
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.font = `800 ${Math.round(Math.max(22, r * 0.5))}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+      ctx.fillText(main, cx, cy - (sub ? r * 0.08 : 0));
+      if (sub) {
+        ctx.font = THEME.font;
+        ctx.fillStyle = THEME.muted;
+        ctx.fillText(sub, cx, cy + r * 0.32);
+      }
+      ctx.restore();
+    }
+
     // Draws a player's drawing in the form used on the reveal (scored curve).
     playerDrawing(drawing, color, opts = {}) {
       const p = this.prompt;
       if (!drawing) return;
+      if (p.type === 'percent') {
+        if (typeof drawing.value !== 'number') return;
+        // Alone (a phone): the guess as an inner arc. With others (shared screen): a notch each.
+        if ((opts.slots || 1) === 1) this.dialArc(drawing.value, { color, width: 8, radius: this.dial.r - 24 });
+        this.dialMarker(drawing.value, color);
+        return;
+      }
       if (S.isFreehand(p)) {
         if (p.type === 'distribution') {
           const c = S.playerCurve(p, drawing);
@@ -411,6 +536,12 @@
     // The real data, animated by progress (0–1).
     truth(progress = 1) {
       const p = this.prompt;
+      if (p.type === 'percent') {
+        const v = p.value * progress;
+        this.dialArc(v, { color: THEME.truth, glow: true });
+        this.dialCenter(`${Math.round(v)}%`);
+        return;
+      }
       if (S.isFreehand(p)) {
         const t = S.truthCurve(p);
         const k = p.type === 'distribution' ? S.distributionDisplayScale(p) : 1;
@@ -445,6 +576,7 @@
     }
 
     static empty(prompt) {
+      if (prompt.type === 'percent') return { value: null };
       if (S.isFreehand(prompt)) return { strokes: [] };
       const blank = () => prompt.categories.map(() => null);
       if (prompt.type === 'bar') return { values: blank() };
@@ -457,6 +589,7 @@
     }
 
     isEmpty() {
+      if (this.prompt.type === 'percent') return this.drawing.value === null;
       const d = this.drawing;
       if (d.strokes) return d.strokes.length === 0;
       if (this.prompt.type === 'interaction') return !d.assign;
@@ -479,7 +612,8 @@
 
     undo() {
       const d = this.drawing;
-      if (d.strokes) d.strokes.pop();
+      if (this.prompt.type === 'percent') d.value = null;
+      else if (d.strokes) d.strokes.pop();
       else if (this.prompt.type === 'interaction') d.assign = null;
       else if (this.lastEdit) {
         const { list, i, prev } = this.lastEdit;
@@ -528,7 +662,17 @@
       return [+x.toPrecision(6), +y.toPrecision(6)];
     }
 
+    // Percent dial: follow the finger around the ring, without jumping across 0%/100%.
+    setDial(px, py, isStart) {
+      let v = this.chart.dialValueAt(px, py);
+      const last = this.drawing.value;
+      if (!isStart && last !== null && Math.abs(v - last) > 50) v = last > 50 ? 100 : 0;
+      this.drawing.value = Math.round(v);
+      this.render();
+    }
+
     start(px, py) {
+      if (this.prompt.type === 'percent') return this.setDial(px, py, true);
       if (S.isFreehand(this.prompt)) {
         this.current = [this.dataPoint(px, py)];
         this.drawing.strokes.push(this.current);
@@ -546,6 +690,7 @@
     }
 
     move(px, py) {
+      if (this.prompt.type === 'percent') return this.setDial(px, py, false);
       if (S.isFreehand(this.prompt)) {
         if (!this.current) return;
         const [lx, ly] = this.lastPx;
@@ -573,6 +718,15 @@
       const ch = this.chart;
       ch.drawAxes();
       const p = this.prompt;
+      if (p.type === 'percent') {
+        const v = this.drawing.value;
+        if (v === null) ch.dialCenter('?', 'Drag around the ring', THEME.muted);
+        else {
+          ch.dialArc(v, { color: this.color });
+          ch.dialCenter(`${v}%`, null, this.color);
+        }
+        return;
+      }
       if (S.isFreehand(p)) ch.strokes(this.drawing.strokes, this.color, 4);
       else if (p.type === 'bar') ch.bars(this.drawing.values, { color: this.color, mode: 'fill', alpha: 0.9, showEmpty: true });
       else {

@@ -9,6 +9,9 @@
  *         = peak height of the true curve (distribution; both curves are first
  *           rescaled to the same area, so only the shape is judged)
  *
+ * Percent prompts ("guess the percent") have one number: error = |guess − answer|
+ * in percentage points.
+ *
  * Interaction charts are a labeling task: both real lines are shown unlabeled
  * (in a shuffled order) and the player says which line is which variable.
  * Right = error 0 (score 100); wrong = error 100 (score 0).
@@ -21,7 +24,7 @@
 
   const SAMPLES = 80; // points along the x-axis at which drawings are compared
   const FREEHAND_TYPES = ['line', 'trend', 'distribution'];
-  const TYPES = FREEHAND_TYPES.concat(['bar', 'interaction']);
+  const TYPES = FREEHAND_TYPES.concat(['bar', 'interaction', 'percent']);
 
   // Limits for sanitizing drawings sent by clients.
   const MAX_STROKES = 60;
@@ -240,6 +243,11 @@
   // Score one drawing. Returns { errorPct, score, empty }.
   // `order` is only used for interaction prompts (see interactionLines).
   function scoreDrawing(prompt, drawing, order = [0, 1]) {
+    if (prompt.type === 'percent') {
+      if (!drawing || typeof drawing.value !== 'number') return { errorPct: 100, score: 0, empty: true };
+      const errorPct = clamp(Math.round(Math.abs(drawing.value - prompt.value)), 0, 100);
+      return { errorPct, score: 100 - errorPct, empty: false };
+    }
     if (prompt.type === 'interaction') {
       if (!drawing || !Array.isArray(drawing.assign)) return { errorPct: 100, score: 0, empty: true };
       const right = isCorrectLabeling(drawing, order);
@@ -266,6 +274,7 @@
   function sanitizeDrawing(prompt, d) {
     if (!d || typeof d !== 'object') return null;
     const num = (v) => typeof v === 'number' && Number.isFinite(v);
+    if (prompt.type === 'percent') return num(d.value) ? { value: clamp(d.value, 0, 100) } : null;
     const yMin = prompt.type === 'distribution' ? 0 : prompt.y.min;
     const yMax = prompt.type === 'distribution' ? 1 : prompt.y.max;
     const cy = (v) => clamp(v, yMin, yMax);
@@ -309,9 +318,15 @@
       throw new Error(`Prompt "${p && p.id}": ${msg}`);
     };
     if (!p || typeof p !== 'object') fail('not an object');
-    for (const k of ['id', 'type', 'title', 'prompt', 'xLabel', 'yLabel', 'source', 'takeaway'])
-      if (typeof p[k] !== 'string' || !p[k]) fail(`missing "${k}"`);
-    if (!TYPES.includes(p.type)) fail(`unknown type "${p.type}"`);
+    if (!TYPES.includes(p && p.type)) fail(`unknown type "${p && p.type}"`);
+    // Percent prompts have no axes: yLabel is the caption under the dial.
+    const required = ['id', 'type', 'title', 'prompt', 'yLabel', 'source', 'takeaway'];
+    if (p.type !== 'percent') required.push('xLabel');
+    for (const k of required) if (typeof p[k] !== 'string' || !p[k]) fail(`missing "${k}"`);
+    if (p.type === 'percent') {
+      if (typeof p.value !== 'number' || p.value < 0 || p.value > 100) fail('needs "value" between 0 and 100');
+      return true;
+    }
     if (!p.y || !(p.y.max > p.y.min)) {
       if (p.type !== 'distribution') fail('needs y.min < y.max');
     }

@@ -10,6 +10,7 @@ A real-time party game for 2–8 players. Each round shows a prompt about a real
    - **Line graph / trend line:** draw freehand from left to right.
    - **Distribution:** draw the shape. Only the shape is judged, not how tall you draw it.
    - **Bar chart:** tap or drag in each column to set a bar's height.
+   - **Guess the percent:** drag around a ring to set a single percentage.
    - **Interaction:** both real lines are already drawn, unlabeled. Tap the line for the first variable; the other line gets the second (use **Swap** to flip them).
 4. **Reveal.** The real data is drawn over everyone's sketches. Each player's score card starts at **100**, shows **Error = −N** in red, and counts down to the round score.
 5. **Win.** The game lasts 5, 8 or 12 rounds. The highest total wins, and ties go to the lower total error.
@@ -24,6 +25,7 @@ error       = round(100 × RMSE(drawing, real data) / chart height), capped at 1
 - **Line and trend:** both curves are compared at 80 evenly spaced points across the data's x-range. Lifting your finger is fine: gaps are bridged and overlapping strokes are averaged.
 - **Distribution:** both curves are rescaled to the same area before comparing, and the error is measured relative to the true peak.
 - **Bar:** each bar is compared directly. Unset bars count as zero. Bar charts have at most 4 bars.
+- **Guess the percent:** the error is how far off you were in percentage points (guess 50 when the answer is 65: Error −15, score 85).
 - **Interaction:** a labeling task, so it's all or nothing. Matching the lines correctly is Error −0 (score 100), and flipping them is Error −100 (score 0). The lines are shuffled every round, so their position gives nothing away.
 - **Blank drawing:** scores 0.
 
@@ -57,6 +59,7 @@ All prompts are in [`data/prompts.json`](data/prompts.json) and are validated wh
 | `line`, `trend` | `x`, `y` axis ranges; `points`: `[[x, y], …]` sorted by x |
 | `distribution` | `x` range; `dist`: `mixture` (normal components), `splitNormal`, `exGaussian` or `logNormal` |
 | `bar` | `y` range; up to 4 `categories`; `values` |
+| `percent` | `value` (0–100); `yLabel` is the caption under the dial (no `xLabel` or axes) |
 | `interaction` | `y` range; up to 4 `categories`; exactly two `series`: `{ name, values }` (shown unlabeled; players match names to lines) |
 
 ### Testing figures without a game

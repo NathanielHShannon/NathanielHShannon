@@ -359,5 +359,267 @@
     "source": "Godden, D. R., & Baddeley, A. D. (1975). Context-dependent memory in two natural environments: On land and underwater. British Journal of Psychology, 66(3), 325–331.",
     "takeaway": "A crossover interaction: you remember best in the place you learned — about 40% more words when the settings matched.",
     "note": "Mean words recalled from the original paper."
+  },
+  {
+    "id": "festinger-carlsmith",
+    "type": "bar",
+    "title": "Paid to Lie",
+    "prompt": "Students did an hour of boring tasks, then were paid to tell the next person it was fun. Later, how enjoyable did each group say the tasks really were?",
+    "xLabel": "Group",
+    "yLabel": "How enjoyable (−5 to +5 scale)",
+    "y": { "min": -2, "max": 2 },
+    "categories": ["Not asked to lie", "Paid $1", "Paid $20"],
+    "values": [-0.45, 1.35, -0.05],
+    "source": "Festinger, L., & Carlsmith, J. M. (1959). Cognitive consequences of forced compliance. Journal of Abnormal and Social Psychology, 58(2), 203–210.",
+    "takeaway": "The $1 group liked the boring task most. $20 was reason enough to lie, but $1 wasn't, so they changed their minds to match what they'd said — cognitive dissonance.",
+    "note": "Means from Table 1 of the original paper (scale −5 to +5; chart shows −2 to +2)."
+  },
+  {
+    "id": "good-samaritan",
+    "type": "bar",
+    "title": "The Good Samaritan",
+    "prompt": "Seminary students walking to give a talk passed a man slumped in a doorway. What % stopped to help, depending on how rushed they'd been told they were?",
+    "xLabel": "How rushed they were",
+    "yLabel": "Stopped to help (%)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["Not rushed", "A bit rushed", "Very rushed"],
+    "values": [63, 45, 10],
+    "source": "Darley, J. M., & Batson, C. D. (1973). \"From Jerusalem to Jericho\": A study of situational and dispositional variables in helping behavior. Journal of Personality and Social Psychology, 27(1), 100–108.",
+    "takeaway": "Being in a hurry mattered far more than character — even students on their way to give a talk about the Good Samaritan parable stepped over the man.",
+    "note": "Percentages as reported in the original paper."
+  },
+  {
+    "id": "smoke-filled-room",
+    "type": "bar",
+    "title": "The Smoke-Filled Room",
+    "prompt": "People filling out a questionnaire noticed smoke pouring into the room through a vent. What % reported it within 6 minutes?",
+    "xLabel": "Who else was in the room",
+    "yLabel": "Reported the smoke (%)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["Nobody", "2 calm strangers", "2 other participants"],
+    "values": [75, 10, 38],
+    "source": "Latané, B., & Darley, J. M. (1968). Group inhibition of bystander intervention in emergencies. Journal of Personality and Social Psychology, 10(3), 215–221.",
+    "takeaway": "Alone, most people reported the smoke within minutes. Next to two strangers who calmly ignored it, only 1 in 10 did — people look to others to decide whether something is an emergency.",
+    "note": "The 'calm strangers' were actors told to ignore the smoke. For groups of 3 participants, 38% is the share of groups where anyone reported it."
+  },
+  {
+    "id": "anchoring-un",
+    "type": "bar",
+    "title": "Spin the Wheel",
+    "prompt": "People spun a wheel of fortune rigged to land on 10 or 65, then estimated what % of UN countries are in Africa. What was the typical estimate after each spin?",
+    "xLabel": "Where the wheel landed",
+    "yLabel": "Typical estimate (% of UN countries)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["Landed on 10", "Landed on 65"],
+    "values": [25, 45],
+    "source": "Tversky, A., & Kahneman, D. (1974). Judgment under uncertainty: Heuristics and biases. Science, 185(4157), 1124–1131.",
+    "takeaway": "A number everyone knew was random still pulled answers toward it — that's anchoring.",
+    "note": "Median estimates as reported in the original paper."
+  },
+  {
+    "id": "asian-disease",
+    "type": "bar",
+    "title": "Saved or Lost?",
+    "prompt": "A disease will kill 600 people. Program A saves 200 for sure; program B is a gamble. What % chose the sure thing when it was described as '200 saved' vs. '400 die' (the same outcome)?",
+    "xLabel": "How the sure option was described",
+    "yLabel": "Chose the sure option (%)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["\"200 will be saved\"", "\"400 will die\""],
+    "values": [72, 22],
+    "source": "Tversky, A., & Kahneman, D. (1981). The framing of decisions and the psychology of choice. Science, 211(4481), 453–458.",
+    "takeaway": "Identical options, opposite choices. Framed as gains, people play it safe; framed as losses, they gamble.",
+    "note": "Percentages from the original paper (152 and 155 participants)."
+  },
+  {
+    "id": "stroop",
+    "type": "bar",
+    "title": "The Stroop Effect",
+    "prompt": "How many seconds does it take to name the ink colors of 100 items: plain colored squares vs. color words printed in a different ink (like RED in blue)?",
+    "xLabel": "What was printed",
+    "yLabel": "Time to name 100 ink colors (seconds)",
+    "y": { "min": 0, "max": 140 },
+    "categories": ["Colored squares", "Mismatched color words"],
+    "values": [63.3, 110.3],
+    "source": "Stroop, J. R. (1935). Studies of interference in serial verbal reactions. Journal of Experimental Psychology, 18(6), 643–662.",
+    "takeaway": "Reading is so automatic you can't switch it off: mismatched words made naming the colors 74% slower.",
+    "note": "Means from Experiment 2 of the original paper."
+  },
+  {
+    "id": "ten-thousand-hours",
+    "type": "bar",
+    "title": "The 10,000-Hour Study",
+    "prompt": "Student violinists in Berlin estimated how much they had practiced alone over their lives. How many hours had each group practiced by age 18?",
+    "xLabel": "Group",
+    "yLabel": "Total practice by age 18 (hours)",
+    "y": { "min": 0, "max": 10000 },
+    "categories": ["Best violinists", "Good violinists", "Future music teachers"],
+    "values": [7410, 5301, 3420],
+    "source": "Ericsson, K. A., Krampe, R. T., & Tesch-Römer, C. (1993). The role of deliberate practice in the acquisition of expert performance. Psychological Review, 100(3), 363–406.",
+    "takeaway": "The best had practiced about twice as much as the future teachers. This study became the '10,000-hour rule' — though a 2019 replication found practice explained much less of the difference.",
+    "note": "Retrospective estimates; the best group passed 10,000 hours by age 20. Replication: Macnamara & Maitra (2019), Royal Society Open Science."
+  },
+  {
+    "id": "replication-crisis",
+    "type": "bar",
+    "title": "The Replication Crisis",
+    "prompt": "Researchers re-ran 100 published psychology studies as closely as they could. What % found a statistically significant result: the original papers vs. the repeats?",
+    "xLabel": "Version of the study",
+    "yLabel": "Found a significant result (%)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["Original papers", "Repeat studies"],
+    "values": [97, 36],
+    "source": "Open Science Collaboration (2015). Estimating the reproducibility of psychological science. Science, 349(6251), aac4716.",
+    "takeaway": "Only about a third held up. Some findings in this very game have been questioned — which is part of how science corrects itself.",
+    "note": "Percentages from the paper's abstract."
+  },
+  {
+    "id": "testing-effect",
+    "type": "interaction",
+    "title": "The Testing Effect",
+    "prompt": "Students read a passage, then either read it again or took a practice test. Later they recalled what they could. One line is each group. Which is which?",
+    "xLabel": "When the final test was",
+    "yLabel": "Passage recalled (%)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["5 minutes later", "2 days later", "1 week later"],
+    "series": [
+      {
+        "name": "Read it twice",
+        "values": [81, 54, 42]
+      },
+      {
+        "name": "Read once + tested",
+        "values": [75, 68, 56]
+      }
+    ],
+    "source": "Roediger, H. L., & Karpicke, J. D. (2006). Test-enhanced learning: Taking memory tests improves long-term retention. Psychological Science, 17(3), 249–255.",
+    "takeaway": "Rereading wins for a few minutes, but testing yourself wins a week later — one of the most useful findings for studying.",
+    "note": "From Figure 1 of Experiment 1; the 1-week values (56% vs. 42%) are as reported, the 5-minute and 2-day values are approximate."
+  },
+  {
+    "id": "jam-study",
+    "type": "interaction",
+    "title": "Too Many Jams",
+    "prompt": "A grocery store tasting booth offered either 6 or 24 jams. One line is each booth. Which is which?",
+    "xLabel": "What shoppers did",
+    "yLabel": "Shoppers (%)",
+    "y": { "min": 0, "max": 100 },
+    "categories": ["Stopped at the booth", "Bought jam (of those who stopped)"],
+    "series": [
+      {
+        "name": "6 jams",
+        "values": [40, 30]
+      },
+      {
+        "name": "24 jams",
+        "values": [60, 3]
+      }
+    ],
+    "source": "Iyengar, S. S., & Lepper, M. R. (2000). When choice is demotivating: Can one desire too much of a good thing? Journal of Personality and Social Psychology, 79(6), 995–1006.",
+    "takeaway": "More choice drew more people in, but far fewer bought — 30% vs. 3%. Later studies found choice overload is real but much smaller and less consistent than this.",
+    "note": "Percentages from the field study (Study 1)."
+  },
+  {
+    "id": "prospect-theory",
+    "type": "line",
+    "title": "Losses Loom Larger",
+    "prompt": "How good does it feel to win money, and how bad does it feel to lose the same amount? Draw how people value gains and losses from −$100 to +$100.",
+    "xLabel": "Money won or lost ($)",
+    "yLabel": "How it feels (subjective value)",
+    "x": { "min": -100, "max": 100 },
+    "y": { "min": -140, "max": 80 },
+    "points": [[-100, -129.5], [-95, -123.8], [-90, -118.0], [-85, -112.2], [-80, -106.4], [-75, -100.5], [-70, -94.6], [-65, -88.6], [-60, -82.6], [-55, -76.5], [-50, -70.4], [-45, -64.1], [-40, -57.8], [-35, -51.4], [-30, -44.9], [-25, -38.2], [-20, -31.4], [-15, -24.4], [-10, -17.1], [-5, -9.3], [0, 0.0], [5, 4.1], [10, 7.6], [15, 10.8], [20, 14.0], [25, 17.0], [30, 19.9], [35, 22.8], [40, 25.7], [45, 28.5], [50, 31.3], [55, 34.0], [60, 36.7], [65, 39.4], [70, 42.0], [75, 44.7], [80, 47.3], [85, 49.9], [90, 52.4], [95, 55.0], [100, 57.5]],
+    "source": "Kahneman, D., & Tversky, A. (1979). Prospect theory: An analysis of decision under risk. Econometrica, 47(2), 263–291. Parameters: Tversky, A., & Kahneman, D. (1992), Journal of Risk and Uncertainty, 5, 297–323.",
+    "takeaway": "Losing $100 hurts more than twice as much as winning $100 feels good — loss aversion. Both sides also flatten out: the next $10 matters less the more you've already won or lost.",
+    "note": "Value function v(x) = x^0.88 for gains and −2.25(−x)^0.88 for losses, using the 1992 median estimates."
+  },
+  {
+    "id": "memory-scanning",
+    "type": "trend",
+    "title": "Scanning Your Memory",
+    "prompt": "People held 1 to 6 digits in mind, then saw a digit and answered 'was it in the set?' as fast as they could. Draw the trend in reaction time.",
+    "xLabel": "Digits held in memory",
+    "yLabel": "Reaction time (milliseconds)",
+    "x": { "min": 1, "max": 6 },
+    "y": { "min": 300, "max": 700 },
+    "points": [[1, 435.1], [6, 624.7]],
+    "source": "Sternberg, S. (1966). High-speed scanning in human memory. Science, 153(3736), 652–654.",
+    "takeaway": "A perfectly straight line: each extra digit adds about 38 ms. People check every item one by one — even after they've found a match.",
+    "note": "Fitted line from the paper: RT = 397 ms + 38 ms per digit."
+  },
+  {
+    "id": "mental-rotation",
+    "type": "trend",
+    "title": "Rotating Shapes in Your Head",
+    "prompt": "People judged whether two 3-D block shapes were the same, with one turned 0° to 180°. Draw the trend: how long did they take to decide?",
+    "xLabel": "How far one shape was turned (degrees)",
+    "yLabel": "Time to decide (seconds)",
+    "x": { "min": 0, "max": 180 },
+    "y": { "min": 0, "max": 6 },
+    "points": [[0, 1.0], [180, 4.0]],
+    "source": "Shepard, R. N., & Metzler, J. (1971). Mental rotation of three-dimensional objects. Science, 171(3972), 701–703.",
+    "takeaway": "Another straight line: people mentally rotate the shape at a steady speed, about 60° per second, as if turning a real object.",
+    "note": "Slope (≈60° per second) as reported; the starting time is approximate."
+  },
+  {
+    "id": "iq-scores",
+    "type": "distribution",
+    "title": "IQ Scores",
+    "prompt": "IQ tests like the Wechsler scales are scored so that the average adult gets 100. Draw the shape of how scores are spread out.",
+    "xLabel": "IQ score",
+    "yLabel": "How common →",
+    "x": { "min": 40, "max": 160 },
+    "dist": {
+      "kind": "mixture",
+      "components": [
+        { "w": 1, "mean": 100, "sd": 15 }
+      ]
+    },
+    "source": "Wechsler, D. (1939). The Measurement of Adult Intelligence. Williams & Wilkins. Current norms: WAIS-IV (2008).",
+    "takeaway": "A bell curve by design: about 68% of people score between 85 and 115, and only about 2% score above 130.",
+    "note": "Normal curve with mean 100 and standard deviation 15, as the tests are normed."
+  },
+  {
+    "id": "asch-percent",
+    "type": "percent",
+    "title": "Asch's Lines",
+    "prompt": "In Asch's experiments, actors unanimously gave obviously wrong answers about which line was longest. What % of real participants went along with the group at least once?",
+    "yLabel": "went along with the wrong answer at least once",
+    "value": 75,
+    "source": "Asch, S. E. (1956). Studies of independence and conformity: I. A minority of one against a unanimous majority. Psychological Monographs, 70(9), 1–70.",
+    "takeaway": "About 3 in 4 caved at least once — but most people answered correctly most of the time, and about a quarter never conformed at all.",
+    "note": "As reported across Asch's studies."
+  },
+  {
+    "id": "linda-problem",
+    "type": "percent",
+    "title": "Linda the Bank Teller",
+    "prompt": "Linda is 31, outspoken, and was active in anti-discrimination protests. Which is more likely: she's a bank teller, or she's a bank teller and a feminist? What % picked the second one?",
+    "yLabel": "said 'bank teller and feminist' is more likely",
+    "value": 85,
+    "source": "Tversky, A., & Kahneman, D. (1983). Extensional versus intuitive reasoning: The conjunction fallacy in probability judgment. Psychological Review, 90(4), 293–315.",
+    "takeaway": "It's logically impossible — every feminist bank teller is also a bank teller. A good story beat basic probability for 85% of people.",
+    "note": "Undergraduates in the original study."
+  },
+  {
+    "id": "above-average-drivers",
+    "type": "percent",
+    "title": "Above-Average Drivers",
+    "prompt": "American students rated their driving skill against everyone else in the study. What % rated themselves as better than the median driver?",
+    "yLabel": "rated themselves above the median",
+    "value": 93,
+    "source": "Svenson, O. (1981). Are we all less risky and more skillful than our fellow drivers? Acta Psychologica, 47(2), 143–148.",
+    "takeaway": "Only 50% can be above the median, but 93% thought they were. (Swedish students were more modest: 69%.)",
+    "note": "U.S. sample of the original study."
+  },
+  {
+    "id": "cold-water",
+    "type": "percent",
+    "title": "More Pain, Please",
+    "prompt": "People held a hand in painfully cold water for 60 seconds. In another trial, they did the same 60 seconds plus 30 more as the water warmed slightly. What % chose to repeat the longer trial?",
+    "yLabel": "chose to repeat the longer trial",
+    "value": 69,
+    "source": "Kahneman, D., Fredrickson, B. L., Schreiber, C. A., & Redelmeier, D. A. (1993). When more pain is preferred to less: Adding a better end. Psychological Science, 4(6), 401–405.",
+    "takeaway": "Most chose more total pain because it ended better. Memory judges an experience by its worst moment and its end — the peak-end rule.",
+    "note": "69% as commonly cited from the original paper."
   }
 ]

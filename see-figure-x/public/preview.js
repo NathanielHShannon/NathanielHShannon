@@ -14,6 +14,7 @@
     distribution: 'Distributions',
     bar: 'Bar charts',
     interaction: 'Interactions',
+    percent: 'Guess the percent',
   };
   const HINTS = {
     line: 'Draw the line from left to right. Lift your finger and redraw any part — overlapping parts are averaged.',
@@ -21,6 +22,7 @@
     distribution: 'Draw the shape of the distribution. Only the shape is judged, not how tall you draw it.',
     bar: 'Tap or drag in each column to set the bar height.',
     interaction: '',
+    percent: 'Drag around the ring to set your guess.',
   };
 
   const $ = (id) => document.getElementById(id);
@@ -127,7 +129,7 @@
     // The pad gets the answer-free version, like players do: interaction lines
     // are shuffled and unlabeled.
     order = S.randomOrder();
-    const { points, dist, values, series, ...pub } = p;
+    const { points, dist, values, value, series, ...pub } = p;
     if (series) {
       pub.series = series.map((s) => ({ name: s.name }));
       pub.lines = S.interactionLines(p, order);
@@ -177,6 +179,7 @@
     $('result').hidden = false;
     $('legend-truth').hidden = labeling;
     $('legend-you').hidden = labeling || !drawing;
+    $('legend-you').lastChild.textContent = p.type === 'percent' ? 'Your guess' : 'Your drawing';
     $('legend-series').innerHTML = labeling
       ? p.series.map((sr, k) => `<li><span class="swatch" style="--c:${VAR_COLORS[k]}"></span>${esc(sr.name)}</li>`).join('')
       : '';
