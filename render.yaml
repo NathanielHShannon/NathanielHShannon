@@ -1,0 +1,18 @@
+# Render Blueprint for See Figure X.
+# In Render: New → Blueprint → connect this GitHub repo → pick the branch → Apply.
+services:
+  - type: web
+    name: see-figure-x
+    runtime: node
+    rootDir: see-figure-x
+    plan: free # free servers sleep after ~15 min idle; first visit then takes ~1 min to wake
+    buildCommand: npm ci
+    startCommand: npm start # Render sets PORT; the server reads it
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # The practice page at /preview shows every answer.
+      # Change to "off" if people outside your group will have the link.
+      - key: PREVIEW
+        value: "on"

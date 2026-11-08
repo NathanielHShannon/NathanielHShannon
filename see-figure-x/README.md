@@ -35,7 +35,17 @@ npm start          # http://localhost:3000  (set PORT to change)
 npm test
 ```
 
-Players need to reach the server from their phones. On the same Wi-Fi, use the computer's local IP (e.g. `http://192.168.1.20:3000`). Otherwise deploy it to any Node host that supports WebSockets (Render, Railway, Fly.io, etc.). Rooms live in memory, so restarting the server ends any games in progress.
+Players need to reach the server from their phones. On the same Wi-Fi, use the computer's local IP (e.g. `http://192.168.1.20:3000`). Otherwise deploy it to a Node host that supports WebSockets (not serverless hosts like Vercel, which can't keep the game's live connections or in-memory rooms). Rooms live in memory, so restarting the server ends any games in progress.
+
+### Deploying to Render
+
+The repo includes a [`render.yaml`](../render.yaml) Blueprint:
+
+1. Sign in at [render.com](https://render.com) with GitHub.
+2. Choose **New → Blueprint**, select this repository, and pick the branch to deploy.
+3. Click **Apply**. The first build takes a few minutes; you get a link like `https://see-figure-x.onrender.com`.
+
+Every push to that branch redeploys automatically. On the free plan the server sleeps after about 15 minutes without visitors and takes about a minute to wake, so open the link shortly before playing. To hide the practice page (which shows all answers), change `PREVIEW` to `off` in the service's **Environment** settings.
 
 ## Adding or fixing prompts
 
