@@ -325,10 +325,10 @@
       <section class="scene" id="s-question" style="justify-content: center">
         <div class="eyebrow">Round 1 · Read the question</div>
         <div class="qcard">
-          <h1>Figure 1. <span>How Tall Are Adults?</span></h1>
-          <p>Take every adult in the U.S. — men and women together. Draw the shape of the height distribution.</p>
+          <h1>Figure 1. <span>The Serial Position Effect</span></h1>
+          <p>People hear a list of 20 words, then recall as many as they can. How likely is each word to be remembered, by its position in the list?</p>
         </div>
-        <p class="muted" style="font-size: 30px; margin: 0">You'll draw the shape of a distribution.</p>
+        <p class="muted" style="font-size: 30px; margin: 0">You'll draw a line graph.</p>
         <div class="btn" id="start-btn">Start drawing</div>
       </section>
 
@@ -337,9 +337,9 @@
         <div class="draw-row">
           <div class="phone">
             <div class="ph-top"><span>Round 1 / 2</span><span id="ph-timer">45</span></div>
-            <div class="ph-title">How Tall Are Adults?</div>
+            <div class="ph-title">The Serial Position Effect</div>
             <canvas id="pad" style="width: 340px; height: 340px"></canvas>
-            <div class="ph-hint">Only the shape is judged, not how tall you draw it.</div>
+            <div class="ph-hint">Draw the line from left to right.</div>
             <div class="btn" id="lock-btn">Lock in</div>
           </div>
           <div class="status">
@@ -353,25 +353,27 @@
       <!-- 4. reveal -->
       <section class="scene" id="s-reveal">
         <div class="head">
-          <h2>Figure 1. <span>How Tall Are Adults?</span></h2>
+          <h2>Figure 1. <span>The Serial Position Effect</span></h2>
           <span class="badge">The reveal</span>
         </div>
         <canvas id="reveal" style="width: 968px; height: 470px"></canvas>
         <div class="legend" id="legend1"></div>
-        <div class="takeaway" id="takeaway1">Not two humps! Men and women differ by about 5½ inches, too little to split the curve.</div>
+        <div class="takeaway" id="takeaway1">A U-shape! The first words get rehearsed and the last are still fresh. The middle is a memory dead zone.</div>
         <div class="cards" id="cards1"></div>
       </section>
 
-      <!-- 5. percent round -->
-      <section class="scene" id="s-percent">
+      <!-- 5. round 2: bar chart -->
+      <section class="scene" id="s-round2">
         <div class="head">
-          <h2>Figure 2. <span>Linda the Bank Teller</span></h2>
-          <span class="badge">Guess the percent</span>
+          <h2>Figure 2. <span>The Replication Crisis</span></h2>
+          <span class="badge">Round 2</span>
         </div>
-        <p class="muted" style="font-size: 30px; line-height: 1.35; margin: 0">
-          Is Linda more likely a bank teller, or a bank teller <em>and</em> a feminist? What % picked the second one?
+        <p class="muted" style="font-size: 28px; line-height: 1.35; margin: 0">
+          Researchers re-ran 100 published psychology studies. What % found a significant result: the originals vs. the repeats?
         </p>
-        <canvas id="dial" style="width: 968px; height: 520px"></canvas>
+        <canvas id="bars" style="width: 968px; height: 400px"></canvas>
+        <div class="legend" id="legend2"></div>
+        <div class="takeaway" id="takeaway2">Only about a third held up when the studies were repeated.</div>
         <div class="cards" id="cards2"></div>
       </section>
 

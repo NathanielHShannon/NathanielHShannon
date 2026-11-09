@@ -15,8 +15,8 @@
   const prompts = Array.isArray(window.SFX_PROMPTS)
     ? window.SFX_PROMPTS
     : (await (await fetch('/api/prompts')).json()).prompts;
-  const height = prompts.find((p) => p.id === 'adult-height');
-  const linda = prompts.find((p) => p.id === 'linda-problem');
+  const serial = prompts.find((p) => p.id === 'serial-position');
+  const replication = prompts.find((p) => p.id === 'replication-crisis');
 
   // ----- the cast and their guesses -----
   const PLAYERS = [
@@ -25,18 +25,19 @@
     { name: 'Ben', color: '#69db7c' },
     { name: 'Maya', color: '#ffd43b' },
   ];
-  const gauss = (x, m, s) => Math.exp(-((x - m) ** 2) / (2 * s * s));
-  const xs = Array.from({ length: 90 }, (_, i) => height.x.min + ((height.x.max - height.x.min) * i) / 89);
+  // Round 1, serial position: four guesses at "chance of recall by position" (1–20).
+  const xs = Array.from({ length: 60 }, (_, i) => 1 + (19 * i) / 59);
   const SHAPES = [
-    (x) => 0.75 * gauss(x, 62, 1.8) + 0.75 * gauss(x, 71.5, 1.8) + 0.02, // two humps (the classic wrong guess)
-    (x) => 0.8 * gauss(x, 66.5, 4.0), // one fairly narrow hump
-    (x) => 0.8 * gauss(x, 65, x < 65 ? 2.6 : 5.5), // skewed
-    (x) => 0.62 * gauss(x, 66, 6.5), // wide and flat
+    (x) => 85 - 3.2 * (x - 1), // steady decline: "you remember the start best" (the classic wrong guess)
+    (x) => 20 + 3 * (x - 1), // steady rise: only the most recent words stick
+    (x) => 28 + 32 * ((x - 10.5) / 9.5) ** 2 + (8 * (x - 1)) / 19, // a shallow U (close!)
+    (x) => 50 + 3 * Math.sin(x), // flat: every word is a coin flip
   ];
-  const heightDrawings = SHAPES.map((f) => ({ strokes: [xs.map((x) => [x, Math.min(1, f(x))])] }));
-  const heightResults = heightDrawings.map((d) => S.scoreDrawing(height, d));
-  const lindaGuesses = [30, 55, 80, 15];
-  const lindaResults = lindaGuesses.map((v) => S.scoreDrawing(linda, { value: v }));
+  const round1Drawings = SHAPES.map((f) => ({ strokes: [xs.map((x) => [x, Math.max(0, Math.min(100, f(x)))])] }));
+  const round1Results = round1Drawings.map((d) => S.scoreDrawing(serial, d));
+  // Round 2, replication crisis: everyone expects most studies to hold up.
+  const round2Drawings = [[90, 80], [95, 60], [85, 40], [70, 65]].map((values) => ({ values }));
+  const round2Results = round2Drawings.map((d) => S.scoreDrawing(replication, d));
 
   // ----- timeline (seconds) -----
   const SCENES = {
@@ -44,8 +45,8 @@
     question: [2.8, 6.6],
     draw: [6.6, 11.8],
     reveal: [11.8, 19.6],
-    percent: [19.6, 25.8],
-    end: [25.8, 29.5],
+    round2: [19.6, 26.4],
+    end: [26.4, 30.0],
   };
   const DURATION = SCENES.end[1];
   const FADE = 0.35;
@@ -69,15 +70,16 @@
       (p, i) =>
         `<div class="card" style="border-top-color:${p.color}"><div class="nm">${p.name}</div><div class="big">100</div><div class="er">Error = <b>−${results[i].errorPct}</b></div></div>`
     ).join('');
-  $('cards1').innerHTML = cardHtml(heightResults);
-  $('cards2').innerHTML = cardHtml(lindaResults);
+  $('cards1').innerHTML = cardHtml(round1Results);
+  $('cards2').innerHTML = cardHtml(round2Results);
+  $('legend2').innerHTML = $('legend1').innerHTML;
 
   // ----- charts (built once; redrawn each frame) -----
-  const padPrompt = { ...height };
-  delete padPrompt.dist;
+  const padPrompt = { ...serial };
+  delete padPrompt.points;
   const pad = new Chart($('pad'), padPrompt);
-  const reveal = new Chart($('reveal'), height);
-  const dial = new Chart($('dial'), linda);
+  const reveal = new Chart($('reveal'), serial);
+  const bars = new Chart($('bars'), replication);
 
   // ----- per-frame rendering -----
   function sceneOpacity(t, [a, b]) {
@@ -122,7 +124,7 @@
     // Nathaniel's finger draws the two-humped guess.
     pad.drawAxes();
     const k = prog(t, DRAW_STROKE[0], DRAW_STROKE[1]);
-    const pts = heightDrawings[0].strokes[0];
+    const pts = round1Drawings[0].strokes[0];
     const n = Math.max(1, Math.round(pts.length * k));
     if (k > 0) pad.strokes([pts.slice(0, n)], PLAYERS[0].color, 5);
     if (k > 0 && k < 1) {
@@ -142,24 +144,27 @@
     const r = t - SCENES.reveal[0];
     reveal.drawAxes();
     reveal.sweep(ease(prog(r, 0.4, 1.9)), () =>
-      heightDrawings.forEach((d, i) => reveal.playerDrawing(d, PLAYERS[i].color, { width: 3.5, alpha: 0.9 }))
+      round1Drawings.forEach((d, i) => reveal.playerDrawing(d, PLAYERS[i].color, { width: 3.5, alpha: 0.9 }))
     );
     const k = prog(r, 2.4, 4.1);
     if (k > 0) reveal.truth(ease(k));
     $('takeaway1').style.opacity = prog(r, 4.1, 4.5);
-    [...$('cards1').children].forEach((el, i) => renderCard(el, heightResults[i], r, 4.4 + i * 0.15));
+    [...$('cards1').children].forEach((el, i) => renderCard(el, round1Results[i], r, 4.4 + i * 0.15));
   }
 
-  function renderPercent(t) {
-    const r = t - SCENES.percent[0];
-    dial.drawAxes();
-    dial.sweep(prog(r, 0.5, 1.3), () => lindaGuesses.forEach((v, i) => dial.dialMarker(v, PLAYERS[i].color)));
-    const k = prog(r, 1.6, 3.0);
-    if (k > 0) dial.truth(ease(k));
-    [...$('cards2').children].forEach((el, i) => renderCard(el, lindaResults[i], r, 3.2 + i * 0.15));
+  function renderRound2(t) {
+    const r = t - SCENES.round2[0];
+    bars.drawAxes();
+    bars.sweep(ease(prog(r, 0.4, 1.5)), () =>
+      round2Drawings.forEach((d, i) => bars.playerDrawing(d, PLAYERS[i].color, { slot: i, slots: PLAYERS.length }))
+    );
+    const k = prog(r, 1.9, 3.3);
+    if (k > 0) bars.truth(ease(k));
+    $('takeaway2').style.opacity = prog(r, 3.3, 3.7);
+    [...$('cards2').children].forEach((el, i) => renderCard(el, round2Results[i], r, 3.5 + i * 0.15));
   }
 
-  const RENDERERS = { title: renderTitle, question: renderQuestion, draw: renderDraw, reveal: renderReveal, percent: renderPercent, end: () => {} };
+  const RENDERERS = { title: renderTitle, question: renderQuestion, draw: renderDraw, reveal: renderReveal, round2: renderRound2, end: () => {} };
 
   function render(t) {
     for (const [name, span] of Object.entries(SCENES)) {
