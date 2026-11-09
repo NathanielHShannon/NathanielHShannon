@@ -50,6 +50,16 @@ The repo includes a [`render.yaml`](../render.yaml) Blueprint:
 
 Every push to that branch redeploys automatically. On the free plan the server sleeps after about 15 minutes without visitors and takes about a minute to wake, so open the link shortly before playing. To hide the practice page (which shows all answers), change `PREVIEW` to `off` in the service's **Environment** settings.
 
+## Demo video
+
+`/demo` plays a scripted 30-second round (title, question, drawing, reveal, a percent round, end card) in a square 1080×1080 frame, made for screen recording or social posts. Add `?link=your text` to change the end card's last line, and `?loop=0` to play it once.
+
+To render it straight to an MP4 (needs Playwright with Chromium, and ffmpeg):
+
+```bash
+node scripts/record-demo.js see-figure-x-demo.mp4 --link="Play at see-figure-x.onrender.com"
+```
+
 ## Adding or fixing prompts
 
 All prompts are in [`data/prompts.json`](data/prompts.json) and are validated when the server starts and in the tests. Each one has `id`, `type`, `title`, `prompt`, `xLabel`, `yLabel`, `source`, `takeaway`, an optional `note`, and the answer:

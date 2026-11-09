@@ -44,6 +44,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     return res.end('ok');
   }
+  if (urlPath === '/demo') return sendFile(res, path.join(STATIC_ROOTS['/'], 'demo.html'));
   if (urlPath === '/preview' || urlPath === '/api/prompts') {
     if (!PREVIEW_ENABLED) {
       res.writeHead(404);
