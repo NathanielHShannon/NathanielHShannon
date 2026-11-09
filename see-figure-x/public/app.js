@@ -144,7 +144,7 @@
   }
 
   function teardown() {
-    if (view.anim) cancelAnimationFrame(view.anim);
+    if (view.stopAnim) view.stopAnim();
     (view.timeouts || []).forEach(clearTimeout);
   }
 
@@ -559,28 +559,19 @@
     };
     const drawPlayers = () =>
       players.forEach(({ r, pl, slot }) => chart.playerDrawing(r.drawing, pl.color, { slot, slots: shown.length, ...styleFor(pl) }));
-    const T_DRAWINGS = 300;
-    const T_TRUTH = 1700;
-    const t0 = performance.now();
-    const frame = (t) => {
-      const el = t - t0;
-      chart.drawAxes();
-      drawPlayers();
-      const prog = Math.max(0, Math.min(1, (el - T_DRAWINGS) / T_TRUTH));
-      if (prog > 0) chart.truth(easeOut(prog));
-      if (prog < 1) view.anim = requestAnimationFrame(frame);
-    };
-    view.anim = requestAnimationFrame(frame);
+    // Guesses sweep in, then the real data sweeps over them.
+    const hasGuesses = players.length > 0;
+    view.stopAnim = animateReveal(chart, drawPlayers, { hasGuesses });
     view.resize = () => {
       chart.resize();
-      cancelAnimationFrame(view.anim);
+      view.stopAnim();
       chart.drawAxes();
       drawPlayers();
       chart.truth(1);
     };
 
-    // Score cards animate after the truth has been drawn.
-    const startScores = T_DRAWINGS + T_TRUTH + 200;
+    // Score cards animate after the real data has been drawn.
+    const startScores = revealDuration(hasGuesses) + 200;
     app.querySelectorAll('.score-card').forEach((el, i) =>
       later(() => {
         // Scroll just enough to show the card, keeping as much of the chart in view as possible.
@@ -634,7 +625,7 @@
       </div>`;
   }
 
-  const { easeOut, animateScoreCard } = window.GBUI;
+  const { easeOut, animateScoreCard, animateReveal, revealDuration } = window.GBUI;
   const ordinal = (n) => n + (['th', 'st', 'nd', 'rd'][((n % 100) - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
 
   function standingsTable(list, title) {

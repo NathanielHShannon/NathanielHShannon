@@ -17,6 +17,11 @@
   box-sizing: border-box;
 }
 
+/* Elements with the hidden attribute stay hidden even when a class sets display. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;

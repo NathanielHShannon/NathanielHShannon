@@ -509,6 +509,22 @@
       ctx.restore();
     }
 
+    // Draw `fn` revealed up to `progress` (0–1): wiped in from the left, or faded in on a dial.
+    sweep(progress, fn) {
+      if (progress <= 0) return;
+      if (progress >= 1) return fn();
+      const { ctx } = this;
+      ctx.save();
+      if (this.isDial) ctx.globalAlpha = progress;
+      else {
+        ctx.beginPath();
+        ctx.rect(0, 0, this.plot.l + this.plot.w * progress, this.h);
+        ctx.clip();
+      }
+      fn();
+      ctx.restore();
+    }
+
     // Draws a player's drawing in the form used on the reveal (scored curve).
     playerDrawing(drawing, color, opts = {}) {
       const p = this.prompt;

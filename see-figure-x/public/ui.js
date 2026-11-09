@@ -30,22 +30,36 @@
     }, 1250);
   }
 
-  // Draw the real data over drawings, sweeping left to right. Returns a cancel function.
-  // drawUnder() paints everything that sits beneath the truth line.
-  function animateTruth(chart, drawUnder, { delay = 300, duration = 1700, onDone } = {}) {
+  // Reveal timeline: everyone's guesses sweep in left to right, a short pause,
+  // then the real data sweeps in over them. Interaction rounds have no guesses
+  // to draw, so they go straight to the real data.
+  const REVEAL = { lead: 250, guesses: 1500, pause: 500, truth: 1700 };
+
+  function revealDuration(hasGuesses) {
+    return REVEAL.lead + (hasGuesses ? REVEAL.guesses + REVEAL.pause : 0) + REVEAL.truth;
+  }
+
+  // drawGuesses() paints every guess; it is clipped as the sweep advances.
+  // Returns a function that stops the animation.
+  function animateReveal(chart, drawGuesses, { hasGuesses = true, onDone } = {}) {
     let raf;
     const t0 = performance.now();
+    const truthStart = REVEAL.lead + (hasGuesses ? REVEAL.guesses + REVEAL.pause : 0);
     const frame = (t) => {
+      const el = t - t0;
       chart.drawAxes();
-      drawUnder();
-      const prog = Math.max(0, Math.min(1, (t - t0 - delay) / duration));
-      if (prog > 0) chart.truth(easeOut(prog));
-      if (prog < 1) raf = requestAnimationFrame(frame);
+      if (hasGuesses) {
+        const g = Math.max(0, Math.min(1, (el - REVEAL.lead) / REVEAL.guesses));
+        chart.sweep(easeOut(g), drawGuesses);
+      }
+      const k = Math.max(0, Math.min(1, (el - truthStart) / REVEAL.truth));
+      if (k > 0) chart.truth(easeOut(k));
+      if (k < 1) raf = requestAnimationFrame(frame);
       else if (onDone) onDone();
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }
 
-  window.GBUI = { easeOut, animateScoreCard, animateTruth };
+  window.GBUI = { easeOut, animateScoreCard, animateReveal, revealDuration };
 })();

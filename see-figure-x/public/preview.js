@@ -3,7 +3,7 @@
   'use strict';
   const S = window.GBScoring;
   const { Chart, Pad, VAR_COLORS } = window.GBChart;
-  const { animateScoreCard, animateTruth } = window.GBUI;
+  const { animateScoreCard, animateReveal, revealDuration } = window.GBUI;
 
   const COLOR = '#4dabf7';
   document.documentElement.style.setProperty('--you', COLOR);
@@ -197,7 +197,8 @@
 
     // Swap the pad for a chart with the full prompt (including the answer).
     const chart = new Chart($('chart'), p);
-    cancelAnim = animateTruth(chart, () => drawResult(chart, drawing));
+    const hasGuess = !!drawing && p.type !== 'interaction';
+    cancelAnim = animateReveal(chart, () => drawResult(chart, drawing), { hasGuesses: hasGuess });
     window.onresize = () => {
       if (!revealed) return;
       if (cancelAnim) cancelAnim();
@@ -211,7 +212,7 @@
       setTimeout(() => {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         animateScoreCard(el);
-      }, 2200)
+      }, revealDuration(hasGuess) + 200)
     );
   }
 
