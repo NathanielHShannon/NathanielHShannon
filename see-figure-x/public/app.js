@@ -447,7 +447,8 @@
     const isDisplay = state.you.role === 'display';
     const results = state.round.results.slice();
     const mine = results.find((r) => r.playerId === state.you.id);
-    const shown = isDisplay ? results : results.filter((r) => r.playerId === state.you.id);
+    // Everyone's guesses are shown on every screen; on a phone your own is drawn on top and thicker.
+    const shown = results;
     const ranked = results.slice().sort((a, b) => b.score - a.score);
     const last = state.round.index + 1 >= state.round.total;
     const nextLabel = last ? 'See final results' : 'Next round';
@@ -476,11 +477,14 @@
                 : `<li><span class="swatch truth"></span>Real data</li>${shown
                     .map((r) => {
                       const pl = playerById(r.playerId);
-                      return pl ? `<li><span class="swatch" style="--c:${pl.color}"></span>${isDisplay ? esc(pl.name) : p.type === 'percent' ? 'Your guess' : 'Your drawing'}</li>` : '';
+                      if (!pl) return '';
+                      const you = !isDisplay && pl.id === state.you.id;
+                      return `<li class="${you ? 'you' : ''}"><span class="swatch" style="--c:${pl.color}"></span>${esc(pl.name)}${you ? ' (you)' : ''}</li>`;
                     })
                     .join('')}`
             }
           </ul>
+          ${isLabeling ? matchRow(shown, isDisplay) : ''}
           ${isDisplay ? '' : cards}
           <section class="finding" data-finding>
             <p class="takeaway">${esc(p.takeaway)}</p>
@@ -504,16 +508,24 @@
 
     // Chart animation: drawings first, then the real data sweeps in.
     const chart = new Chart(document.getElementById('chart'), p);
-    const players = shown.map((r) => ({ r, pl: playerById(r.playerId) })).filter((x) => x.pl && x.r.drawing);
+    // Each player keeps a fixed slot (for bar markers); others are drawn first so yours ends on top.
+    const players = shown
+      .map((r, slot) => ({ r, pl: playerById(r.playerId), slot }))
+      .filter((x) => x.pl && x.r.drawing)
+      .sort((a, b) => (a.pl.id === state.you.id) - (b.pl.id === state.you.id));
+    const styleFor = (pl) => {
+      if (isDisplay) return { alpha: 0.85, width: 2.5 };
+      return pl.id === state.you.id ? { alpha: 1, width: 4, highlight: true } : { alpha: 0.5, width: 2 };
+    };
+    const drawPlayers = () =>
+      players.forEach(({ r, pl, slot }) => chart.playerDrawing(r.drawing, pl.color, { slot, slots: shown.length, ...styleFor(pl) }));
     const T_DRAWINGS = 300;
     const T_TRUTH = 1700;
     const t0 = performance.now();
     const frame = (t) => {
       const el = t - t0;
       chart.drawAxes();
-      players.forEach(({ r, pl }, i) =>
-        chart.playerDrawing(r.drawing, pl.color, { slot: i, slots: players.length, alpha: isDisplay ? 0.85 : 0.95, width: isDisplay ? 2.5 : 3.5 })
-      );
+      drawPlayers();
       const prog = Math.max(0, Math.min(1, (el - T_DRAWINGS) / T_TRUTH));
       if (prog > 0) chart.truth(easeOut(prog));
       if (prog < 1) view.anim = requestAnimationFrame(frame);
@@ -523,7 +535,7 @@
       chart.resize();
       cancelAnimationFrame(view.anim);
       chart.drawAxes();
-      players.forEach(({ r, pl }, i) => chart.playerDrawing(r.drawing, pl.color, { slot: i, slots: players.length }));
+      drawPlayers();
       chart.truth(1);
     };
 
@@ -531,11 +543,12 @@
     const startScores = T_DRAWINGS + T_TRUTH + 200;
     app.querySelectorAll('.score-card').forEach((el, i) =>
       later(() => {
-        if (!isDisplay) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Scroll just enough to show the card, keeping as much of the chart in view as possible.
+        if (!isDisplay) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         animateScoreCard(el);
       }, startScores + i * 120)
     );
-    const after = startScores + 2600 + shown.length * 120;
+    const after = startScores + 2600 + (isDisplay ? shown.length : 1) * 120;
     later(() => {
       const st = app.querySelector('[data-standings]');
       st.hidden = false;
@@ -548,6 +561,20 @@
       }
     }, after);
     view.update = null;
+  }
+
+  // Interaction rounds: who matched the lines and who flipped them.
+  function matchRow(results, isDisplay) {
+    const chips = results
+      .map((r) => {
+        const pl = playerById(r.playerId);
+        if (!pl) return '';
+        const mark = r.empty ? '— no answer' : r.score === 100 ? '✓ matched' : '✗ flipped';
+        const you = !isDisplay && pl.id === state.you.id ? ' (you)' : '';
+        return `<li class="chip ${r.score === 100 ? 'ok' : 'miss'}" style="--c:${pl.color}"><span class="dot"></span>${esc(pl.name)}${you}<span class="state">${mark}</span></li>`;
+      })
+      .join('');
+    return `<ul class="chips match-row" aria-label="Who matched the lines">${chips}</ul>`;
   }
 
   function errorLabel(r) {

@@ -518,6 +518,20 @@ label {
   border-radius: 2px;
   background: var(--c);
 }
+.legend li.you {
+  color: var(--text);
+  font-weight: 700;
+}
+.match-row .chip {
+  font-size: 0.9rem;
+  padding: 6px 10px;
+}
+.match-row .chip.ok .state {
+  color: var(--good);
+}
+.match-row .chip.miss .state {
+  color: var(--bad);
+}
 .swatch.truth {
   background: #fff;
   box-shadow: 0 0 6px #fff;

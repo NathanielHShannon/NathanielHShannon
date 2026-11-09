@@ -316,11 +316,13 @@
           const inner = bw * 0.7;
           const w = Math.max(6, inner / slots - 3);
           const x0 = cx - inner / 2 + (inner / slots) * slot + 1.5;
+          ctx.globalAlpha = alpha;
           ctx.fillStyle = color;
           ctx.fillRect(x0, y - 2, w, 4);
           ctx.beginPath();
           ctx.arc(x0 + w / 2, y, 4, 0, Math.PI * 2);
           ctx.fill();
+          ctx.globalAlpha = 1;
         }
       });
     }
@@ -514,7 +516,7 @@
       if (p.type === 'percent') {
         if (typeof drawing.value !== 'number') return;
         // Alone (a phone): the guess as an inner arc. With others (shared screen): a notch each.
-        if ((opts.slots || 1) === 1) this.dialArc(drawing.value, { color, width: 8, radius: this.dial.r - 24 });
+        if ((opts.slots || 1) === 1 || opts.highlight) this.dialArc(drawing.value, { color, width: 8, radius: this.dial.r - 24 });
         this.dialMarker(drawing.value, color);
         return;
       }
@@ -528,7 +530,7 @@
           this.strokes(drawing.strokes, hexToRgba(color, opts.alpha || 0.95), opts.width || 2.5);
         }
       } else if (p.type === 'bar') {
-        this.bars(drawing.values, { color, mode: opts.barMode || 'tick', slot: opts.slot || 0, slots: opts.slots || 1, alpha: 0.85 });
+        this.bars(drawing.values, { color, mode: opts.barMode || 'tick', slot: opts.slot || 0, slots: opts.slots || 1, alpha: opts.alpha ?? 0.85 });
       }
       // Interaction answers are labels, not marks; the score card shows right or wrong.
     }
