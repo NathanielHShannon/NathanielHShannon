@@ -828,6 +828,24 @@ label {
   height: 70px;
 }
 
+.solo-total {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+}
+.solo-total .num {
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.solo-total .of {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 /* ---------- shared-screen (display) layouts ---------- */
 @media (min-width: 900px) {
   .wide.lobby,

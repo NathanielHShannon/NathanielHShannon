@@ -36,6 +36,17 @@ function labelingFor(prompt, lines, right) {
   return { assign: right ? assign : assign.slice().reverse() };
 }
 
+// A drawing that matches the real data exactly (traces the true curve for line-type charts).
+function perfectFor(prompt, lines) {
+  if (prompt.type === 'interaction') return labelingFor(prompt, lines, true);
+  if (prompt.type === 'bar') return { values: prompt.values.slice() };
+  if (prompt.type === 'percent') return { value: prompt.value };
+  const S = require('../shared/scoring');
+  const t = S.truthCurve(prompt);
+  const k = prompt.type === 'distribution' ? S.distributionDisplayScale(prompt) : 1;
+  return { strokes: [t.xs.map((x, i) => [x, t.ys[i] * k])] };
+}
+
 function answerFor(prompt, quality) {
   // Percent: guess (1 − quality) × 100 points too low (every answer is at least 25%).
   if (prompt.type === 'percent') return { value: prompt.value - 100 * (1 - quality) };
@@ -165,4 +176,44 @@ test('full game: create, join, draw, lock, reveal, final, play again', async (t)
   assert.ok(seen.size >= 2, 'mixed chart types');
 
   [host, again, players[1], players[2]].forEach((c) => c.ws.close());
+
+  // ----- solo game: starts at once with 5 random figures, private, full flow -----
+  const solo = client(port);
+  await solo.open;
+  solo.send({ type: 'create', mode: 'solo', name: '' });
+  await solo.until((c) => c.state && c.state.phase === 'preview');
+  assert.strictEqual(solo.state.solo, true);
+  assert.strictEqual(solo.state.round.total, 5);
+  assert.strictEqual(solo.state.players[0].name, 'You');
+  const intruder = client(port);
+  await intruder.open;
+  intruder.send({ type: 'join', code: solo.state.code, name: 'x' });
+  await intruder.until((c) => c.errors.length);
+  assert.match(intruder.errors[0], /solo/);
+  intruder.ws.close();
+  const seenIds = new Set();
+  for (let round = 0; round < 5; round++) {
+    await solo.until((c) => c.state.phase === 'preview' && c.state.round.index === round);
+    seenIds.add(solo.state.round.prompt.id);
+    solo.send({ type: 'begin' });
+    await solo.until((c) => c.state.phase === 'draw');
+    const full = PROMPTS.find((p) => p.id === solo.state.round.prompt.id);
+    const drawing = perfectFor(full, solo.state.round.prompt.lines);
+    solo.send({ type: 'lock', drawing });
+    await solo.until((c) => c.state.phase === 'reveal');
+    assert.strictEqual(solo.state.round.results[0].score, 100, `perfect answer on ${full.id}`);
+    solo.send({ type: 'next' });
+  }
+  await solo.until((c) => c.state.phase === 'final');
+  assert.strictEqual(seenIds.size, 5, 'five different figures');
+  assert.strictEqual(solo.state.standings[0].total, 500);
+  assert.strictEqual(solo.state.standings[0].history.length, 5);
+  solo.send({ type: 'playAgain' });
+  await solo.until((c) => c.state.phase === 'preview' && c.state.round.index === 0);
+  assert.strictEqual(solo.state.players[0].total, 0, 'scores reset for the new set');
+  const soloCode = solo.state.code;
+  solo.send({ type: 'leave' });
+  await new Promise((r) => setTimeout(r, 50));
+  assert.ok(!require('../server').rooms.has(soloCode), 'solo room removed when the player leaves');
+  solo.ws.close();
 });

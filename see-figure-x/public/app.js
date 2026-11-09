@@ -172,13 +172,18 @@
           <button id="watch" class="link">Show this room on this screen instead</button>
         </section>
         <section class="card">
+          <h2>Play solo</h2>
+          <button id="solo" class="primary">Play 5 random figures</button>
+          <p class="fine">Just you, no room code needed. You get 5 new figures every time.</p>
+        </section>
+        <section class="card">
           <h2>Host a game</h2>
           <button id="host-display" class="primary">Use this screen as the shared board</button>
           <p class="fine">Best on a TV or laptop everyone can see. Players join from their phones.</p>
           <button id="host-player">Host and play from this device</button>
           <p class="fine">Uses the name above.</p>
         </section>
-        <p class="preview-link">Just want to try the figures? <a href="/preview">Practice on your own</a></p>
+        <p class="preview-link">Want to try a specific figure? <a href="/preview">Browse all the figures</a></p>
         <details class="how">
           <summary>How to play</summary>
           <ol>
@@ -207,6 +212,7 @@
       send({ type: 'watch', code: codeEl.value });
     };
     document.getElementById('host-display').onclick = () => send({ type: 'create', mode: 'display' });
+    document.getElementById('solo').onclick = () => send({ type: 'create', mode: 'solo', name: getName() });
     document.getElementById('host-player').onclick = () => {
       if (!getName()) return toast('Enter your name first.');
       send({ type: 'create', mode: 'player', name: getName() });
@@ -227,7 +233,7 @@
       <header class="bar">
         ${logo(true)}
         <div class="bar-mid">${r ? `<span class="round-no">Round ${r.index + 1} / ${r.total}</span><span class="badge">${TYPE_LABEL[r.prompt.type]}</span>` : ''}</div>
-        <div class="bar-right"><span class="timer" data-timer></span><span class="code">${esc(state.code)}</span></div>
+        <div class="bar-right"><span class="timer" data-timer></span><span class="code">${state.solo ? 'Solo' : esc(state.code)}</span></div>
       </header>`;
   }
 
@@ -581,6 +587,7 @@
     );
     const after = startScores + 2600 + (isDisplay ? shown.length : 1) * 120;
     later(() => {
+      if (state.solo) return; // one player: the score card already shows the running total
       const st = app.querySelector('[data-standings]');
       st.hidden = false;
       st.innerHTML = standingsTable(state.players.slice().sort((a, b) => b.total - a.total || a.totalError - b.totalError), 'Standings');
@@ -643,7 +650,36 @@
   }
 
   // ----- final -----
+  function renderSoloFinal() {
+    const mine = state.standings[0];
+    const rounds = Math.max(1, state.roundsPlayed || 0);
+    app.innerHTML = `
+      ${header()}
+      <main class="final">
+        <h1 class="final-title">Your results</h1>
+        <div class="solo-total"><span class="num">${mine.total}</span><span class="of">/ ${rounds * 100}</span></div>
+        <p class="fine center">Average error ${Math.round(mine.totalError / rounds)}%</p>
+        <section class="card">
+          <h2>Round by round</h2>
+          <ol class="table full">
+            ${mine.history
+              .map(
+                (h, i) =>
+                  `<li style="--c:${mine.color}"><span class="pos">${i + 1}</span><span class="nm">${esc(h.title)}</span><span class="err">error ${h.errorPct}%</span><span class="pts">${h.score}</span></li>`
+              )
+              .join('')}
+          </ol>
+        </section>
+        <button class="primary big" id="again">Play 5 new figures</button>
+        <button class="link" id="leave">Back to home</button>
+      </main>`;
+    document.getElementById('again').onclick = () => send({ type: 'playAgain' });
+    document.getElementById('leave').onclick = leave;
+    view.update = null;
+  }
+
   function renderFinal() {
+    if (state.solo) return renderSoloFinal();
     const list = state.standings;
     const rounds = Math.max(1, state.roundsPlayed || 0);
     const podium = list.slice(0, 3);

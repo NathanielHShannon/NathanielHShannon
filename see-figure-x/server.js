@@ -22,6 +22,7 @@ const PREVIEW_ENABLED = process.env.PREVIEW !== 'off';
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 8;
 const ROUND_OPTIONS = [5, 8, 12];
+const SOLO_ROUNDS = 5;
 const DRAW_OPTIONS = [30, 45, 60];
 const HOST_HANDOFF_MS = 20000;
 const ROOM_IDLE_MS = 15 * 60 * 1000;
@@ -238,6 +239,7 @@ function stateFor(room, viewerId) {
     code: room.code,
     phase: room.phase,
     hostId: room.hostId,
+    solo: !!room.solo,
     settings: room.settings,
     limits: { minPlayers: MIN_PLAYERS, maxPlayers: MAX_PLAYERS, rounds: ROUND_OPTIONS, drawSeconds: DRAW_OPTIONS },
     you: { id: viewerId, role, isHost: viewerId === room.hostId },
@@ -272,7 +274,7 @@ function stateFor(room, viewerId) {
 
 function standings(room) {
   return [...room.players.values()]
-    .map((p) => ({ id: p.id, name: p.name, color: p.color, total: p.total, totalError: p.totalError }))
+    .map((p) => ({ id: p.id, name: p.name, color: p.color, total: p.total, totalError: p.totalError, history: p.history || [] }))
     .sort((a, b) => b.total - a.total || a.totalError - b.totalError);
 }
 
@@ -304,6 +306,7 @@ function startGame(room) {
   for (const p of room.players.values()) {
     p.total = 0;
     p.totalError = 0;
+    p.history = [];
   }
   nextRound(room);
 }
@@ -335,6 +338,7 @@ function reveal(room) {
     const r = scoring.scoreDrawing(prompt, drawing, room.round.order);
     p.total += r.score;
     p.totalError += r.errorPct;
+    (p.history = p.history || []).push({ title: prompt.title, score: r.score, errorPct: r.errorPct });
     return { playerId: p.id, drawing, ...r };
   });
   room.roundsPlayed++;
@@ -364,7 +368,15 @@ function handle(ws, msg) {
     if (ws.ctx) return fail('Already in a room.');
     const room = createRoom();
     let member;
-    if (msg.mode === 'player') {
+    if (msg.mode === 'solo') {
+      // Solo: a private room with one player that starts right away with 5 random figures.
+      room.solo = true;
+      room.settings.rounds = SOLO_ROUNDS;
+      member = addPlayer(room, String(msg.name || '').trim() || 'You');
+      room.hostId = member.id;
+      attach(ws, room, member, 'player');
+      return startGame(room);
+    } else if (msg.mode === 'player') {
       member = addPlayer(room, msg.name);
       room.hostId = member.id;
       attach(ws, room, member, 'player');
@@ -387,6 +399,7 @@ function handle(ws, msg) {
       attach(ws, room, member, room.players.has(member.id) ? 'player' : 'display');
       return broadcast(room);
     }
+    if (room.solo) return fail("That's a solo game, so nobody else can join it.");
     if (msg.type === 'watch') {
       const member = { id: newId(), sockets: new Set() };
       room.displays.set(member.id, member);
@@ -416,7 +429,7 @@ function handle(ws, msg) {
     }
     case 'start': {
       if (!isHost || room.phase !== 'lobby') return;
-      if (connectedPlayers(room).length < MIN_PLAYERS) return fail(`Need at least ${MIN_PLAYERS} players to start.`);
+      if (!room.solo && connectedPlayers(room).length < MIN_PLAYERS) return fail(`Need at least ${MIN_PLAYERS} players to start.`);
       return startGame(room);
     }
     case 'draft':
@@ -455,7 +468,8 @@ function handle(ws, msg) {
       return;
     }
     case 'playAgain': {
-      if (isHost && room.phase === 'final') backToLobby(room);
+      // Solo games go straight into 5 new random figures; group games return to the lobby.
+      if (isHost && room.phase === 'final') room.solo ? startGame(room) : backToLobby(room);
       return;
     }
     case 'leave': {
@@ -468,6 +482,7 @@ function handle(ws, msg) {
 function leave(ws, room) {
   const id = ws.ctx.id;
   ws.ctx = null;
+  if (room.solo) return destroyRoom(room); // nobody else is in a solo game
   const member = memberOf(room, id);
   if (!member) return;
   member.sockets.delete(ws);

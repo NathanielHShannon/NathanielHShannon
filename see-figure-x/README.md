@@ -4,6 +4,8 @@ A real-time party game for 2–8 players. Each round shows a prompt about a real
 
 ## Rules
 
+**Playing alone?** Tap **Play solo** on the home screen for a quick game of 5 random figures. It's the same rounds and scoring, just without a room code; your final screen shows your score out of 500 and each round's result.
+
 1. **Join.** The host opens the site and either uses the screen as a shared board (TV or laptop) or hosts and plays from their own device. Players join on their phones with the 4-letter room code and a name.
 2. **Question.** Everyone reads the question and scenario, with no chart and no timer yet. The host taps **Start drawing** when the group is ready.
 3. **Draw (30, 45 or 60 s; host's choice).** The chart appears on every screen and the timer starts. Each player draws on their own private pad, then taps **Lock in**. The round ends when everyone has locked in or time runs out. An unlocked drawing is still scored as it stands.
