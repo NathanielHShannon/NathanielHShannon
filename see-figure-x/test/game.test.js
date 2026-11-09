@@ -104,8 +104,14 @@ test('full game: create, join, draw, lock, reveal, final, play again', async (t)
   const seen = new Set();
   for (let round = 0; round < 5; round++) {
     await host.until((c) => c.state.phase === 'preview' && c.state.round.index === round);
-    host.send({ type: 'skip' }); // skip the 8 s preview
+    // Question phase: no timer, and it waits for the host.
+    assert.strictEqual(host.state.phaseEndsAt, null, 'no timer while reading the question');
+    players[0].send({ type: 'begin' }); // not the host: ignored
+    await new Promise((r) => setTimeout(r, 50));
+    assert.strictEqual(host.state.phase, 'preview');
+    host.send({ type: 'begin' });
     await host.until((c) => c.state.phase === 'draw');
+    assert.ok(host.state.phaseEndsAt > Date.now(), 'timer starts with the chart');
     const full = PROMPTS.find((p) => p.id === host.state.round.prompt.id);
     seen.add(full.type);
     const labeling = full.type === 'interaction';

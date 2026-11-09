@@ -19,7 +19,6 @@ PROMPTS.forEach(scoring.validatePrompt);
 const PORT = Number(process.env.PORT) || 3000;
 // The preview page exposes every answer, so it can be turned off for public servers.
 const PREVIEW_ENABLED = process.env.PREVIEW !== 'off';
-const PREVIEW_MS = 8000;
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 8;
 const ROUND_OPTIONS = [5, 8, 12];
@@ -158,7 +157,7 @@ function createRoom() {
   const room = {
     code: makeCode(),
     hostId: null,
-    phase: 'lobby', // lobby → preview → draw → reveal → … → final
+    phase: 'lobby', // lobby → preview (question only) → draw → reveal → … → final
     settings: { rounds: 8, drawSeconds: 45 },
     players: new Map(), // id → { id, name, color, total, totalError, sockets:Set }
     displays: new Map(), // id → { id, sockets:Set }
@@ -315,7 +314,8 @@ function nextRound(room) {
     return setPhase(room, 'final');
   }
   room.round = { drafts: new Map(), locked: new Set(), results: [], order: scoring.randomOrder(() => crypto.randomInt(2)) };
-  setPhase(room, 'preview', PREVIEW_MS, () => startDraw(room));
+  // Question first, with no timer: the chart and the clock appear when the host taps Start.
+  setPhase(room, 'preview');
 }
 
 function startDraw(room) {
@@ -428,6 +428,11 @@ function handle(ws, msg) {
         broadcast(room);
         maybeEndDraw(room);
       }
+      return;
+    }
+    case 'begin': {
+      // Host has let everyone read the question: show the chart and start the timer.
+      if (isHost && room.phase === 'preview') startDraw(room);
       return;
     }
     case 'skip': {

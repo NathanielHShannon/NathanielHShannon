@@ -371,6 +371,57 @@ label {
   color: var(--accent);
 }
 
+/* ---------- question (before the chart appears) ---------- */
+.question {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 16px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.question .prompt-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.question .what {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.question .waiting {
+  margin: 0;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text);
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.question .link {
+  align-self: center;
+}
+@media (min-width: 900px) {
+  .question.wide {
+    max-width: 1000px;
+    padding-top: 48px;
+  }
+  .question.wide .prompt-card h1 {
+    font-size: 2.4rem;
+  }
+  .question.wide .prompt-card p {
+    font-size: 1.7rem;
+    line-height: 1.4;
+  }
+  .question.wide .what {
+    font-size: 1.15rem;
+  }
+}
+
 /* ---------- prompt + chart ---------- */
 .prompt-card h1 {
   font-size: 1.15rem;

@@ -135,7 +135,8 @@
       window.scrollTo(0, 0);
       if (!state) renderHome();
       else if (state.phase === 'lobby') renderLobby();
-      else if (state.phase === 'preview' || state.phase === 'draw') renderRound();
+      else if (state.phase === 'preview') renderQuestion();
+      else if (state.phase === 'draw') renderRound();
       else if (state.phase === 'reveal') renderReveal();
       else if (state.phase === 'final') renderFinal();
     }
@@ -304,7 +305,46 @@
   // Paper-style caption number, e.g. "Figure 3."
   const figNo = () => `<span class="fig-no">Figure ${state.round.index + 1}.</span> `;
 
-  // ----- round: preview + draw -----
+  // ----- round, step 1: the question on its own (no chart, no timer) -----
+  const WHAT_YOU_DO = {
+    line: "You'll draw a line graph.",
+    trend: "You'll draw a trend line.",
+    distribution: "You'll draw the shape of a distribution.",
+    bar: "You'll set the height of each bar.",
+    interaction: "You'll label which line is which.",
+    percent: "You'll guess a percentage.",
+  };
+
+  function renderQuestion() {
+    const p = state.round.prompt;
+    const isDisplay = state.you.role === 'display';
+    const hostPlayer = state.players.find((x) => x.id === state.hostId);
+    const who = hostPlayer && !state.you.isHost ? esc(hostPlayer.name) : 'the host';
+    app.innerHTML = `
+      ${header()}
+      <main class="question ${isDisplay ? 'wide' : ''}">
+        <p class="label">Read the question</p>
+        ${promptCard(p, true)}
+        <p class="what">${esc(WHAT_YOU_DO[p.type])} The chart and the ${state.settings.drawSeconds}-second timer appear when the round starts.</p>
+        ${
+          state.you.isHost
+            ? `<button class="primary big" id="begin">Start drawing</button>`
+            : `<p class="waiting">Waiting for ${who} to start the round…</p>`
+        }
+        ${isDisplay ? `<ul class="chips" data-status></ul>` : ''}
+        ${state.you.isHost ? '<button class="link" id="end">End game</button>' : ''}
+      </main>`;
+    if (state.you.isHost) {
+      document.getElementById('begin').onclick = () => send({ type: 'begin' });
+      document.getElementById('end').onclick = () => confirm('End the game now and show final results?') && send({ type: 'end' });
+    }
+    view.update = () => {
+      const status = app.querySelector('[data-status]');
+      if (status) status.innerHTML = state.players.map((x) => playerChip(x)).join('');
+    };
+  }
+
+  // ----- round, step 2: drawing -----
   function promptCard(p, big) {
     const vars =
       big && p.type === 'interaction'
@@ -339,7 +379,7 @@
         ${
           isDisplay
             ? `<section class="status"><ul class="chips" data-status></ul>${hostControls(
-                `<button id="skip">${state.phase === 'preview' ? 'Start drawing now' : 'End drawing now'}</button><button class="link" id="end">End game</button>`
+                `<button id="skip">End drawing now</button><button class="link" id="end">End game</button>`
               )}</section>`
             : ''
         }
