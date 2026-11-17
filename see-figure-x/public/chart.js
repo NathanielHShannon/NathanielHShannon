@@ -1,0 +1,771 @@
+/* See Figure X — chart rendering and the touch drawing pad. */
+(function () {
+  'use strict';
+  const S = window.GBScoring;
+
+  const THEME = {
+    bg: '#0d1526',
+    grid: 'rgba(140, 170, 220, 0.10)',
+    gridStrong: 'rgba(140, 170, 220, 0.22)',
+    axis: '#7f93b8',
+    text: '#c3d0ea',
+    muted: '#7f93b8',
+    truth: '#ffffff',
+    font: '600 12px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    fontSmall: '500 11px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    fontTitle: '700 13px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  };
+  // Interaction charts: each variable has its own color; unlabeled lines are grey.
+  const VAR_COLORS = ['#ff922b', '#b197fc'];
+  const UNLABELED = '#8ea0c2';
+
+  function niceStep(range, target) {
+    const raw = range / target;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / mag;
+    return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * mag;
+  }
+
+  function ticks(min, max, target) {
+    const step = niceStep(max - min, target);
+    const out = [];
+    for (let v = Math.ceil(min / step - 1e-9) * step; v <= max + 1e-9; v += step) out.push(+v.toFixed(10));
+    return out;
+  }
+
+  // Axis ticks. An axis with format "feet" holds inches and ticks on whole
+  // 3, 6 or 12 inch steps so labels read like 5′6″.
+  function axisTicks(axis, target) {
+    if (axis.format !== 'feet') return ticks(axis.min, axis.max, target);
+    const range = axis.max - axis.min;
+    const step = [3, 6, 12].find((s) => range / s <= target) || 12;
+    const out = [];
+    for (let v = Math.ceil(axis.min / step) * step; v <= axis.max; v += step) out.push(v);
+    return out;
+  }
+
+  function axisLabel(axis, v) {
+    if (axis.format !== 'feet') return fmt(v);
+    return `${Math.floor(v / 12)}′${Math.round(v % 12)}″`;
+  }
+
+  function fmt(v) {
+    return String(+v.toFixed(2)).replace('-', '−');
+  }
+
+  function wrap(ctx, text, maxWidth) {
+    const words = String(text).split(' ');
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = w;
+      } else line = test;
+    }
+    if (line) lines.push(line);
+    return lines.slice(0, 2);
+  }
+
+  function hexToRgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+  }
+
+  class Chart {
+    constructor(canvas, prompt) {
+      this.canvas = canvas;
+      this.prompt = prompt;
+      this.ctx = canvas.getContext('2d');
+      this.categorical = prompt.type === 'bar' || prompt.type === 'interaction';
+      this.isDial = prompt.type === 'percent';
+      this.yr = prompt.type === 'distribution' ? { min: 0, max: 1 } : this.isDial ? { min: 0, max: 100 } : prompt.y;
+      this.resize();
+    }
+
+    resize() {
+      const rect = this.canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      this.w = Math.max(200, rect.width);
+      this.h = Math.max(160, rect.height);
+      this.canvas.width = Math.round(this.w * dpr);
+      this.canvas.height = Math.round(this.h * dpr);
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const compact = this.w < 420;
+      const left = this.prompt.type === 'distribution' ? 34 : compact ? 52 : 62;
+      const bottom = this.categorical ? (compact ? 62 : 66) : compact ? 50 : 54;
+      this.plot = { l: left, t: 14, r: this.w - 14, b: this.h - bottom };
+      this.plot.w = this.plot.r - this.plot.l;
+      // "Guess the percent" dial geometry: a ring centered above a caption.
+      this.dial = {
+        cx: this.w / 2,
+        cy: (this.h - 44) / 2 + 6,
+        r: Math.max(40, Math.min(this.w, this.h - 44) / 2 - 34),
+      };
+      this.plot.h = this.plot.b - this.plot.t;
+    }
+
+    // ----- coordinate mapping -----
+    xToPx(x) {
+      const { min, max } = this.prompt.x;
+      return this.plot.l + ((x - min) / (max - min)) * this.plot.w;
+    }
+    yToPx(y) {
+      return this.plot.b - ((y - this.yr.min) / (this.yr.max - this.yr.min)) * this.plot.h;
+    }
+    pxToX(px) {
+      const { min, max } = this.prompt.x;
+      return min + ((px - this.plot.l) / this.plot.w) * (max - min);
+    }
+    pxToY(py) {
+      return this.yr.min + ((this.plot.b - py) / this.plot.h) * (this.yr.max - this.yr.min);
+    }
+    band() {
+      return this.plot.w / this.prompt.categories.length;
+    }
+    catCenter(i) {
+      return this.plot.l + this.band() * (i + 0.5);
+    }
+    catAt(px) {
+      const i = Math.floor((px - this.plot.l) / this.band());
+      return Math.max(0, Math.min(this.prompt.categories.length - 1, i));
+    }
+
+    // ----- base -----
+    drawAxes() {
+      if (this.isDial) return this.drawDial();
+      const { ctx, plot, prompt } = this;
+      ctx.clearRect(0, 0, this.w, this.h);
+      ctx.fillStyle = THEME.bg;
+      ctx.fillRect(0, 0, this.w, this.h);
+
+      // graph-paper grid
+      ctx.lineWidth = 1;
+      const minor = 24;
+      ctx.strokeStyle = THEME.grid;
+      ctx.beginPath();
+      for (let x = plot.l; x <= plot.r + 0.5; x += minor) {
+        ctx.moveTo(Math.round(x) + 0.5, plot.t);
+        ctx.lineTo(Math.round(x) + 0.5, plot.b);
+      }
+      for (let y = plot.b; y >= plot.t - 0.5; y -= minor) {
+        ctx.moveTo(plot.l, Math.round(y) + 0.5);
+        ctx.lineTo(plot.r, Math.round(y) + 0.5);
+      }
+      ctx.stroke();
+
+      ctx.font = THEME.fontSmall;
+      ctx.fillStyle = THEME.text;
+
+      // y ticks
+      if (prompt.type !== 'distribution') {
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = THEME.gridStrong;
+        ctx.beginPath();
+        for (const v of axisTicks(this.yr, this.plot.h < 220 ? 4 : 6)) {
+          const y = Math.round(this.yToPx(v)) + 0.5;
+          ctx.moveTo(plot.l, y);
+          ctx.lineTo(plot.r, y);
+          ctx.fillText(axisLabel(this.yr, v), plot.l - 6, y);
+        }
+        ctx.stroke();
+        if (this.yr.min < 0 && this.yr.max > 0) {
+          ctx.strokeStyle = THEME.axis;
+          ctx.beginPath();
+          const y0 = Math.round(this.yToPx(0)) + 0.5;
+          ctx.moveTo(plot.l, y0);
+          ctx.lineTo(plot.r, y0);
+          ctx.stroke();
+        }
+      }
+
+      // x ticks / categories
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      if (this.categorical) {
+        const bw = this.band();
+        prompt.categories.forEach((c, i) => {
+          const lines = wrap(ctx, c, bw - 4);
+          lines.forEach((ln, k) => ctx.fillText(ln, this.catCenter(i), plot.b + 6 + k * 13));
+        });
+      } else {
+        ctx.strokeStyle = THEME.gridStrong;
+        ctx.beginPath();
+        const target = Math.max(3, Math.min(8, Math.floor(plot.w / 70)));
+        for (const v of axisTicks(prompt.x, target)) {
+          const x = Math.round(this.xToPx(v)) + 0.5;
+          ctx.moveTo(x, plot.t);
+          ctx.lineTo(x, plot.b);
+          ctx.fillText(axisLabel(prompt.x, v), x, plot.b + 6);
+        }
+        ctx.stroke();
+      }
+
+      // axes
+      ctx.strokeStyle = THEME.axis;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(plot.l, plot.t);
+      ctx.lineTo(plot.l, plot.b);
+      ctx.lineTo(plot.r, plot.b);
+      ctx.stroke();
+
+      // axis titles
+      ctx.fillStyle = THEME.text;
+      ctx.font = THEME.fontTitle;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(prompt.xLabel, plot.l + plot.w / 2, this.h - 6);
+      ctx.save();
+      ctx.translate(13, plot.t + plot.h / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(prompt.yLabel, 0, 0);
+      ctx.restore();
+    }
+
+    // Clip drawing to the plot area.
+    clipped(fn) {
+      const { ctx, plot } = this;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(plot.l, plot.t - 4, plot.w + 2, plot.h + 6);
+      ctx.clip();
+      fn(ctx);
+      ctx.restore();
+    }
+
+    // ----- marks -----
+    strokes(strokes, color, width = 3.5) {
+      this.clipped((ctx) => {
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        for (const s of strokes) {
+          if (s.length === 1) {
+            ctx.beginPath();
+            ctx.arc(this.xToPx(s[0][0]), this.yToPx(s[0][1]), width / 2 + 1, 0, Math.PI * 2);
+            ctx.fill();
+            continue;
+          }
+          ctx.beginPath();
+          s.forEach(([x, y], i) => (i ? ctx.lineTo(this.xToPx(x), this.yToPx(y)) : ctx.moveTo(this.xToPx(x), this.yToPx(y))));
+          ctx.stroke();
+        }
+      });
+    }
+
+    // A sampled curve, optionally revealed left-to-right up to `progress` (0–1).
+    curve(xs, ys, { color, width = 3, progress = 1, glow = false, alpha = 1 }) {
+      const n = Math.max(2, Math.ceil(xs.length * progress));
+      this.clipped((ctx) => {
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        if (glow) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 14;
+        }
+        ctx.beginPath();
+        for (let i = 0; i < n && i < xs.length; i++) {
+          const px = this.xToPx(xs[i]);
+          const py = this.yToPx(ys[i]);
+          i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.stroke();
+      });
+    }
+
+    // Bars. mode 'fill' draws solid bars; mode 'tick' draws a marker line at the
+    // value, offset within the band so several players can share a category.
+    bars(values, { color, mode = 'fill', progress = 1, slot = 0, slots = 1, alpha = 1, showEmpty = false }) {
+      const { ctx } = this;
+      const bw = this.band();
+      const base = this.yToPx(Math.max(this.yr.min, Math.min(this.yr.max, 0)));
+      values.forEach((v, i) => {
+        const cx = this.catCenter(i);
+        if (v === null || v === undefined) {
+          if (showEmpty) {
+            ctx.save();
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = hexToRgba(color, 0.5);
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx - bw * 0.3, this.plot.t + this.plot.h * 0.35, bw * 0.6, this.plot.b - (this.plot.t + this.plot.h * 0.35));
+            ctx.fillStyle = THEME.muted;
+            ctx.font = THEME.fontSmall;
+            ctx.textAlign = 'center';
+            ctx.fillText('tap', cx, this.plot.t + this.plot.h * 0.6);
+            ctx.restore();
+          }
+          return;
+        }
+        const y = this.yToPx(this.yr.min + (v - this.yr.min) * progress);
+        if (mode === 'fill') {
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = color;
+          const w = bw * 0.6;
+          ctx.fillRect(cx - w / 2, Math.min(y, base), w, Math.abs(base - y));
+          ctx.globalAlpha = 1;
+        } else {
+          const inner = bw * 0.7;
+          const w = Math.max(6, inner / slots - 3);
+          const x0 = cx - inner / 2 + (inner / slots) * slot + 1.5;
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = color;
+          ctx.fillRect(x0, y - 2, w, 4);
+          ctx.beginPath();
+          ctx.arc(x0 + w / 2, y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      });
+    }
+
+    // Interaction lines across the categories. colors[i] colors line i;
+    // labels[i] (optional) is written next to the line's right end.
+    interaction(lines, { colors, labels, width = 3.5, progress = 1, glow = false, markerSize = 6 }) {
+      const { ctx } = this;
+      const pts = lines.map((vals) =>
+        vals.map((v, i) => [this.catCenter(i), this.yToPx(this.yr.min + (v - this.yr.min) * progress)])
+      );
+      pts.forEach((line, li) => {
+        const c = colors[li];
+        ctx.save();
+        ctx.strokeStyle = c;
+        ctx.fillStyle = c;
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        if (glow) {
+          ctx.shadowColor = c;
+          ctx.shadowBlur = 12;
+        }
+        ctx.beginPath();
+        line.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+        for (const [x, y] of line) {
+          ctx.beginPath();
+          ctx.arc(x, y, markerSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+      if (!labels || progress < 1) return;
+      // Name each line at its right end: the higher end gets its label above, the lower one below.
+      const ends = pts.map((line) => line[line.length - 1]);
+      ctx.save();
+      ctx.font = THEME.fontTitle;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ends.forEach(([x, y], li) => {
+        if (!labels[li]) return;
+        const other = ends[1 - li][1];
+        const above = y < other || (y === other && li === 0);
+        const ty = Math.min(this.plot.b - 10, Math.max(this.plot.t + 10, y + (above ? -1 : 1) * (markerSize + 12)));
+        const w = ctx.measureText(labels[li]).width;
+        const tx = Math.max(this.plot.l + 4, Math.min(this.plot.r - w - 4, x - w / 2));
+        ctx.fillStyle = 'rgba(13, 21, 38, 0.85)';
+        ctx.fillRect(tx - 4, ty - 10, w + 8, 20);
+        ctx.fillStyle = colors[li];
+        ctx.fillText(labels[li], tx, ty);
+      });
+      ctx.restore();
+    }
+
+    // Which of the given lines is nearest the tap (in pixels), or -1 if none is close.
+    lineAt(px, py, lines, maxDist = 70) {
+      let best = -1;
+      let bestD = Infinity;
+      lines.forEach((vals, li) => {
+        const pts = vals.map((v, i) => [this.catCenter(i), this.yToPx(v)]);
+        for (let i = 0; i + 1 < pts.length; i++) {
+          const [ax, ay] = pts[i];
+          const [bx, by] = pts[i + 1];
+          const dx = bx - ax;
+          const dy = by - ay;
+          const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
+          const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+          if (d < bestD) {
+            bestD = d;
+            best = li;
+          }
+        }
+      });
+      return bestD <= maxDist ? best : -1;
+    }
+
+    // ----- "Guess the percent" dial -----
+    dialAngle(v) {
+      return -Math.PI / 2 + (v / 100) * Math.PI * 2;
+    }
+
+    // The value (0–100) at a point, measured clockwise from 12 o'clock.
+    dialValueAt(px, py) {
+      const { cx, cy } = this.dial;
+      let a = Math.atan2(py - cy, px - cx) + Math.PI / 2;
+      if (a < 0) a += Math.PI * 2;
+      return (a / (Math.PI * 2)) * 100;
+    }
+
+    drawDial() {
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      ctx.clearRect(0, 0, this.w, this.h);
+      ctx.fillStyle = THEME.bg;
+      ctx.fillRect(0, 0, this.w, this.h);
+      // track
+      ctx.strokeStyle = 'rgba(140, 170, 220, 0.14)';
+      ctx.lineWidth = 26;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+      // ticks every 5%, labels every 25%
+      ctx.strokeStyle = THEME.axis;
+      ctx.fillStyle = THEME.text;
+      ctx.font = THEME.fontSmall;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let v = 0; v < 100; v += 5) {
+        const a = this.dialAngle(v);
+        const major = v % 25 === 0;
+        const r0 = r + 15;
+        const r1 = r + (major ? 23 : 19);
+        ctx.lineWidth = major ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+        ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+        ctx.stroke();
+        // Push side labels out a little further so wide text clears the tick marks.
+        const lr = r + 32 + Math.abs(Math.cos(a)) * 12;
+        if (major) ctx.fillText(v + '%', cx + Math.cos(a) * lr, cy + Math.sin(a) * lr);
+      }
+      // caption under the dial
+      ctx.font = THEME.fontTitle;
+      ctx.fillStyle = THEME.text;
+      ctx.textBaseline = 'bottom';
+      const lines = wrap(ctx, this.prompt.yLabel, this.w - 24);
+      lines.forEach((ln, i) => ctx.fillText(ln, cx, this.h - 6 - (lines.length - 1 - i) * 16));
+    }
+
+    dialArc(v, { color, width = 26, radius, glow = false }) {
+      if (v <= 0) return;
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = v >= 100 ? 'butt' : 'round';
+      if (glow) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 16;
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius || r, this.dialAngle(0), this.dialAngle(Math.min(100, v)));
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // A player's guess as a pointer just inside the ring, so the answer arc never covers it.
+    dialMarker(v, color) {
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      const a = this.dialAngle(v);
+      const c = Math.cos(a);
+      const sn = Math.sin(a);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx + c * (r - 16), cy + sn * (r - 16));
+      ctx.lineTo(cx + c * (r - 34), cy + sn * (r - 34));
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx + c * (r - 40), cy + sn * (r - 40), 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    dialCenter(main, sub, color = THEME.truth) {
+      const { ctx } = this;
+      const { cx, cy, r } = this.dial;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.font = `800 ${Math.round(Math.max(22, r * 0.5))}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+      ctx.fillText(main, cx, cy - (sub ? r * 0.08 : 0));
+      if (sub) {
+        ctx.font = THEME.font;
+        ctx.fillStyle = THEME.muted;
+        ctx.fillText(sub, cx, cy + r * 0.32);
+      }
+      ctx.restore();
+    }
+
+    // Draw `fn` revealed up to `progress` (0–1): wiped in from the left, or faded in on a dial.
+    sweep(progress, fn) {
+      if (progress <= 0) return;
+      if (progress >= 1) return fn();
+      const { ctx } = this;
+      ctx.save();
+      if (this.isDial) ctx.globalAlpha = progress;
+      else {
+        ctx.beginPath();
+        ctx.rect(0, 0, this.plot.l + this.plot.w * progress, this.h);
+        ctx.clip();
+      }
+      fn();
+      ctx.restore();
+    }
+
+    // Draws a player's drawing in the form used on the reveal (scored curve).
+    playerDrawing(drawing, color, opts = {}) {
+      const p = this.prompt;
+      if (!drawing) return;
+      if (p.type === 'percent') {
+        if (typeof drawing.value !== 'number') return;
+        // Alone (a phone): the guess as an inner arc. With others (shared screen): a notch each.
+        if ((opts.slots || 1) === 1 || opts.highlight) this.dialArc(drawing.value, { color, width: 8, radius: this.dial.r - 24 });
+        this.dialMarker(drawing.value, color);
+        return;
+      }
+      if (S.isFreehand(p)) {
+        if (p.type === 'distribution') {
+          const c = S.playerCurve(p, drawing);
+          if (!c) return;
+          const k = S.distributionDisplayScale(p);
+          this.curve(c.xs, c.ys.map((y) => y * k), { color, width: opts.width || 2.5, alpha: opts.alpha || 0.95 });
+        } else {
+          this.strokes(drawing.strokes, hexToRgba(color, opts.alpha || 0.95), opts.width || 2.5);
+        }
+      } else if (p.type === 'bar') {
+        this.bars(drawing.values, { color, mode: opts.barMode || 'tick', slot: opts.slot || 0, slots: opts.slots || 1, alpha: opts.alpha ?? 0.85 });
+      }
+      // Interaction answers are labels, not marks; the score card shows right or wrong.
+    }
+
+    // The real data, animated by progress (0–1).
+    truth(progress = 1) {
+      const p = this.prompt;
+      if (p.type === 'percent') {
+        const v = p.value * progress;
+        this.dialArc(v, { color: THEME.truth, glow: true });
+        this.dialCenter(`${Math.round(v)}%`);
+        return;
+      }
+      if (S.isFreehand(p)) {
+        const t = S.truthCurve(p);
+        const k = p.type === 'distribution' ? S.distributionDisplayScale(p) : 1;
+        this.curve(t.xs, t.ys.map((y) => y * k), { color: THEME.truth, width: 4.5, progress, glow: true });
+      } else if (p.type === 'bar') {
+        this.bars(p.values, { color: 'rgba(255,255,255,0.22)', mode: 'fill', progress });
+        this.bars(
+          p.values.map((v) => v),
+          { color: THEME.truth, mode: 'tick', progress, slots: 1 }
+        );
+      } else {
+        this.interaction(
+          p.series.map((s) => s.values),
+          { colors: VAR_COLORS, labels: p.series.map((s) => s.name), width: 4.5, progress, glow: true, markerSize: 7 }
+        );
+      }
+    }
+  }
+
+  // ---------- drawing pad ----------
+  class Pad {
+    constructor(canvas, prompt, color, onChange) {
+      this.chart = new Chart(canvas, prompt);
+      this.prompt = prompt;
+      this.color = color;
+      this.onChange = onChange;
+      this.enabled = true;
+      this.drawing = Pad.empty(prompt);
+      this.current = null;
+      this.bind();
+      this.render();
+    }
+
+    static empty(prompt) {
+      if (prompt.type === 'percent') return { value: null };
+      if (S.isFreehand(prompt)) return { strokes: [] };
+      const blank = () => prompt.categories.map(() => null);
+      if (prompt.type === 'bar') return { values: blank() };
+      return { assign: null }; // interaction: assign[k] = displayed line labeled as series k
+    }
+
+    load(drawing) {
+      if (drawing) this.drawing = JSON.parse(JSON.stringify(drawing));
+      this.render();
+    }
+
+    isEmpty() {
+      if (this.prompt.type === 'percent') return this.drawing.value === null;
+      const d = this.drawing;
+      if (d.strokes) return d.strokes.length === 0;
+      if (this.prompt.type === 'interaction') return !d.assign;
+      return d.values.every((v) => v === null);
+    }
+
+    // Interaction: flip which line is which.
+    swap() {
+      if (!this.drawing.assign) return;
+      this.drawing.assign = this.drawing.assign.slice().reverse();
+      this.render();
+      this.onChange(true);
+    }
+
+    clear() {
+      this.drawing = Pad.empty(this.prompt);
+      this.render();
+      this.onChange(true);
+    }
+
+    undo() {
+      const d = this.drawing;
+      if (this.prompt.type === 'percent') d.value = null;
+      else if (d.strokes) d.strokes.pop();
+      else if (this.prompt.type === 'interaction') d.assign = null;
+      else if (this.lastEdit) {
+        const { list, i, prev } = this.lastEdit;
+        list[i] = prev;
+        this.lastEdit = null;
+      }
+      this.render();
+      this.onChange(true);
+    }
+
+    bind() {
+      const c = this.chart.canvas;
+      const pos = (e) => {
+        const r = c.getBoundingClientRect();
+        return [e.clientX - r.left, e.clientY - r.top];
+      };
+      c.style.touchAction = 'none';
+      c.onpointerdown = (e) => {
+        if (!this.enabled) return;
+        e.preventDefault();
+        c.setPointerCapture(e.pointerId);
+        this.pointer = e.pointerId;
+        this.start(...pos(e));
+      };
+      c.onpointermove = (e) => {
+        if (!this.enabled || this.pointer !== e.pointerId) return;
+        e.preventDefault();
+        const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+        for (const ev of events.length ? events : [e]) this.move(...pos(ev));
+        this.render();
+      };
+      const end = (e) => {
+        if (this.pointer !== e.pointerId) return;
+        this.pointer = null;
+        this.current = null;
+        this.onChange(true);
+      };
+      c.onpointerup = end;
+      c.onpointercancel = end;
+    }
+
+    dataPoint(px, py) {
+      const ch = this.chart;
+      const x = Math.max(this.prompt.x.min, Math.min(this.prompt.x.max, ch.pxToX(px)));
+      const y = Math.max(ch.yr.min, Math.min(ch.yr.max, ch.pxToY(py)));
+      return [+x.toPrecision(6), +y.toPrecision(6)];
+    }
+
+    // Percent dial: follow the finger around the ring, without jumping across 0%/100%.
+    setDial(px, py, isStart) {
+      let v = this.chart.dialValueAt(px, py);
+      const last = this.drawing.value;
+      if (!isStart && last !== null && Math.abs(v - last) > 50) v = last > 50 ? 100 : 0;
+      this.drawing.value = Math.round(v);
+      this.render();
+    }
+
+    start(px, py) {
+      if (this.prompt.type === 'percent') return this.setDial(px, py, true);
+      if (S.isFreehand(this.prompt)) {
+        this.current = [this.dataPoint(px, py)];
+        this.drawing.strokes.push(this.current);
+        this.lastPx = [px, py];
+        this.render();
+      } else if (this.prompt.type === 'interaction') {
+        // Tapping a line labels it as the first variable; the other line gets the second.
+        const li = this.chart.lineAt(px, py, this.prompt.lines);
+        if (li < 0) return;
+        this.drawing.assign = [li, 1 - li];
+        this.render();
+      } else {
+        this.setColumn(px, py, true);
+      }
+    }
+
+    move(px, py) {
+      if (this.prompt.type === 'percent') return this.setDial(px, py, false);
+      if (S.isFreehand(this.prompt)) {
+        if (!this.current) return;
+        const [lx, ly] = this.lastPx;
+        if (Math.hypot(px - lx, py - ly) < 2) return;
+        this.lastPx = [px, py];
+        this.current.push(this.dataPoint(px, py));
+      } else if (this.prompt.type === 'bar') {
+        this.setColumn(px, py, false);
+      }
+    }
+
+    setColumn(px, py, isStart) {
+      const ch = this.chart;
+      const i = ch.catAt(px);
+      const y = Math.max(ch.yr.min, Math.min(ch.yr.max, ch.pxToY(py)));
+      const list = this.drawing.values;
+      if (isStart || !this.lastEdit || this.lastEdit.i !== i || this.lastEdit.list !== list) {
+        this.lastEdit = { list, i, prev: list[i] };
+      }
+      list[i] = +y.toPrecision(5);
+      this.render();
+    }
+
+    render() {
+      const ch = this.chart;
+      ch.drawAxes();
+      const p = this.prompt;
+      if (p.type === 'percent') {
+        const v = this.drawing.value;
+        if (v === null) ch.dialCenter('?', 'Drag around the ring', THEME.muted);
+        else {
+          ch.dialArc(v, { color: this.color });
+          ch.dialCenter(`${v}%`, null, this.color);
+        }
+        return;
+      }
+      if (S.isFreehand(p)) ch.strokes(this.drawing.strokes, this.color, 4);
+      else if (p.type === 'bar') ch.bars(this.drawing.values, { color: this.color, mode: 'fill', alpha: 0.9, showEmpty: true });
+      else {
+        const a = this.drawing.assign;
+        const colors = [UNLABELED, UNLABELED];
+        const labels = ['', ''];
+        if (a) {
+          a.forEach((li, k) => {
+            colors[li] = VAR_COLORS[k];
+            labels[li] = p.series[k].name;
+          });
+        }
+        ch.interaction(p.lines, { colors, labels, width: 4, markerSize: 7 });
+      }
+    }
+
+    resize() {
+      this.chart.resize();
+      this.render();
+    }
+  }
+
+  window.GBChart = { Chart, Pad, THEME, VAR_COLORS, UNLABELED, hexToRgba };
+})();
