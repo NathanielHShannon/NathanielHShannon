@@ -1,4 +1,4 @@
-## Hi, I'm Nathaniel
+## Hey, I'm Nate,
 
 I'm a researcher who measures what's hard to pin down: why people avoid clinical trials, which students may not graduate, and how social conditions shape depression in older adults. I build predictive and causal models on messy, real-world data, check them for bias first, and turn the results into recommendations people who aren't researchers can actually act on.
 
