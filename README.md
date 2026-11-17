@@ -1,6 +1,6 @@
 ## Hi, I'm Nathaniel
 
-I'm a researcher who measures what's hard to pin down: why people avoid clinical trials, which students may not graduate, and how social conditions shape depression in older adults. I build predictive and causal models on messy, real-world data, check them for bias first, and turn the results into clear recommendations.
+I'm a researcher who measures what's hard to pin down: why people avoid clinical trials, which students may not graduate, and how social conditions shape depression in older adults. I build predictive and causal models on messy, real-world data, check them for bias first, and turn the results into recommendations people who aren't researchers can actually act on.
 
 **Currently:** Postdoctoral Fellow, Community Medicine & Population Health, University of Alabama · PhD, Educational Psychology · Based in Tuscaloosa, open to relocating
 
@@ -9,7 +9,7 @@ I'm a researcher who measures what's hard to pin down: why people avoid clinical
 - **Predictive modeling.** Benchmarked four machine learning model types on national data from 25,000+ high school students to flag graduation risk early.
 - **Causal inference.** Causal forests on social determinants of health and late-life depression; causal mediation of parental involvement and STEM achievement.
 - **Measurement.** Survey design and validation, including a Health Belief Model measure for cancer clinical trial participation and tests of whether questionnaires work the same across race and income.
-- **Behavioral data at scale.** Three years at Nielsen analyzing purchase histories of 250,000+ Walgreens customers and running neuro studies of shopper choice.
+- **Behavioral data at scale.** Three years at Nielsen turning purchase histories of 250,000+ Walgreens customers into $5M+ in identified product opportunities, training client teams to run the analysis themselves, and running neuro studies of shopper choice.
 
 ### Toolkit
 
